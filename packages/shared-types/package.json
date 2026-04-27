@@ -1,0 +1,17 @@
+{
+  "name": "@stock-pile/shared-types",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "@stock-pile/eslint-config": "workspace:*",
+    "@stock-pile/tsconfig": "workspace:*",
+    "typescript": "^5.0.0"
+  }
+}

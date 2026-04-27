@@ -1,0 +1,263 @@
+openapi: 3.0.3
+info:
+  title: Stock Pile API Gateway
+  version: 0.0.1
+  description: Personal investment assistant - unified API gateway
+
+servers:
+  - url: http://localhost:3000/api
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode: { type: integer }
+        message: { type: string }
+        timestamp: { type: string }
+        path: { type: string }
+
+paths:
+  # ── Auth (handled by gateway directly) ──────────────────────────
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: 회원가입
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+      responses:
+        '201': { description: 회원가입 완료 }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: 로그인
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: JWT 토큰 반환
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken: { type: string }
+
+  # ── Journal → api-journal:3001 ──────────────────────────────────
+  /journal/trades:
+    get:
+      tags: [journal]
+      summary: 매매 목록 조회
+      parameters:
+        - name: ticker
+          in: query
+          schema: { type: string }
+        - name: side
+          in: query
+          schema: { type: string, enum: [BUY, SELL] }
+        - name: emotion
+          in: query
+          schema: { type: string }
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200': { description: 매매 목록 }
+
+  /journal/trades/{id}:
+    patch:
+      tags: [journal]
+      summary: 매매 수정
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: 수정 완료 }
+    delete:
+      tags: [journal]
+      summary: 매매 삭제
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: 삭제 완료 }
+
+  /journal/trades/import/preview:
+    post:
+      tags: [journal]
+      summary: CSV 임포트 프리뷰
+      responses:
+        '200': { description: 파싱 결과 미리보기 }
+
+  /journal/trades/import/confirm:
+    post:
+      tags: [journal]
+      summary: CSV 임포트 확정
+      responses:
+        '201': { description: 저장 완료 }
+
+  /journal/analytics/summary:
+    get:
+      tags: [journal]
+      summary: 전체 통계 요약
+      responses:
+        '200': { description: 통계 }
+
+  /journal/analytics/monthly:
+    get:
+      tags: [journal]
+      summary: 월별 수익률 추이
+      responses:
+        '200': { description: 월별 데이터 }
+
+  /journal/chat/parse-trade:
+    post:
+      tags: [chat]
+      summary: 자연어 → 매매 파싱
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: { type: string }
+      responses:
+        '200': { description: 파싱 결과 }
+
+  /journal/chat/clarify:
+    post:
+      tags: [chat]
+      summary: 모호한 항목 명확화
+      responses:
+        '200': { description: 업데이트된 세션 }
+
+  /journal/chat/confirm-trade:
+    post:
+      tags: [chat]
+      summary: 매매 확정 저장
+      responses:
+        '201': { description: 저장 완료 }
+
+  /journal/coaching/monthly-report:
+    post:
+      tags: [journal]
+      summary: 월간 코칭 리포트 생성 (Claude)
+      responses:
+        '200': { description: 코칭 리포트 }
+
+  # ── Report → api-report:3002 ────────────────────────────────────
+  /report/reports/generate:
+    post:
+      tags: [report]
+      summary: 종목 분석 리포트 생성
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticker]
+              properties:
+                ticker: { type: string }
+      responses:
+        '200': { description: 분석 리포트 }
+
+  /report/reports/{ticker}/latest:
+    get:
+      tags: [report]
+      summary: 최신 리포트 조회
+      parameters:
+        - name: ticker
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: 최신 리포트 }
+
+  # ── Backtest → api-backtest:3003 ────────────────────────────────
+  /backtest/strategies/parse:
+    post:
+      tags: [backtest]
+      summary: 자연어 → 전략 DSL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [naturalLanguage]
+              properties:
+                naturalLanguage: { type: string }
+      responses:
+        '200': { description: DSL 결과 }
+
+  /backtest/backtest/run:
+    post:
+      tags: [backtest]
+      summary: 백테스팅 실행 (비동기)
+      responses:
+        '202': { description: 작업 ID 반환 }
+
+  /backtest/backtest/results/{id}:
+    get:
+      tags: [backtest]
+      summary: 백테스팅 결과 조회
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: 백테스팅 결과 }
+
+  # ── Telegram → telegram-bot:3004 ────────────────────────────────
+  /telegram/webhook:
+    post:
+      tags: [telegram]
+      summary: 텔레그램 웹훅
+      security: []
+      responses:
+        '200': { description: OK }

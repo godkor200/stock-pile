@@ -1,0 +1,11 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": { "^.+\\.(t|j)s$": "ts-jest" },
+  "moduleNameMapper": {
+    "^@stock-pile/shared-types(.*)$": "<rootDir>/../../../packages/shared-types/src$1",
+    "^@stock-pile/db-schema(.*)$": "<rootDir>/../../../packages/db-schema/src$1"
+  }
+}

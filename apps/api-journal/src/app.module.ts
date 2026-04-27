@@ -9,6 +9,9 @@ import {
   AnalysisReportEntity,
   ChatSessionEntity,
 } from '@stock-pile/db-schema';
+import { TradesModule } from './trades/trades.module';
+import { PositionsModule } from './positions/positions.module';
+import { StocksModule } from './stocks/stocks.module';
 
 @Module({
   imports: [
@@ -27,8 +30,9 @@ import {
         logging: config.get('NODE_ENV') === 'development',
       }),
     }),
-    // TradesModule, PositionsModule, AnalyticsModule, CoachingModule, ChatInputModule
-    // — A-1~A-7에서 구현
+    TradesModule,
+    PositionsModule,
+    StocksModule,
   ],
 })
 export class AppModule {}

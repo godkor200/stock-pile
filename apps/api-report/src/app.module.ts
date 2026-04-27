@@ -6,6 +6,9 @@ import {
   StockEntity,
   AnalysisReportEntity,
 } from '@stock-pile/db-schema';
+import { DartModule } from './dart/dart.module';
+import { NewsModule } from './news/news.module';
+import { IndicatorsModule } from './indicators/indicators.module';
 
 @Module({
   imports: [
@@ -23,8 +26,9 @@ import {
         synchronize: false,
       }),
     }),
-    // DartModule, NewsModule, IndicatorsModule, ReportModule
-    // — B-1~B-2에서 구현
+    DartModule,
+    NewsModule,
+    IndicatorsModule,
   ],
 })
 export class AppModule {}

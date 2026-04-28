@@ -178,6 +178,9 @@ importers:
       '@stock-pile/tsconfig':
         specifier: workspace:*
         version: link:../../packages/tsconfig
+      '@types/express':
+        specifier: ^4.17.0
+        version: 4.17.25
       '@types/jest':
         specifier: ^29.0.0
         version: 29.5.14

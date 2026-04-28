@@ -15,7 +15,7 @@ export class StockEntity {
   @Column({ type: 'enum', enum: Market })
   market: Market;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   sector: string | null;
 
   @UpdateDateColumn({ name: 'updated_at' })

@@ -9,6 +9,7 @@ import {
 import { DartModule } from './dart/dart.module';
 import { NewsModule } from './news/news.module';
 import { IndicatorsModule } from './indicators/indicators.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { IndicatorsModule } from './indicators/indicators.module';
     DartModule,
     NewsModule,
     IndicatorsModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}

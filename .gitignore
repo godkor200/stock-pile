@@ -45,3 +45,8 @@ apps/api-backtest/venv/
 
 # TypeORM
 *.js.map
+
+# Package build artifacts (compiled in-place, not in dist/)
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.d.ts.map

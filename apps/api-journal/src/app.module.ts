@@ -12,6 +12,7 @@ import {
 import { TradesModule } from './trades/trades.module';
 import { PositionsModule } from './positions/positions.module';
 import { StocksModule } from './stocks/stocks.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { StocksModule } from './stocks/stocks.module';
     TradesModule,
     PositionsModule,
     StocksModule,
+    ChatModule,
   ],
 })
 export class AppModule {}

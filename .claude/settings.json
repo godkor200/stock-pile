@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(venv/bin/pytest tests/ *)",
+      "Bash(.venv/bin/pytest tests/ *)",
+      "Bash(pnpm --filter api-journal test *)",
+      "Bash(pnpm --filter api-report test *)"
+    ]
+  }
+}

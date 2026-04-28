@@ -22,7 +22,7 @@ export class UserEntity {
   @Column({ name: 'password_hash' })
   passwordHash: string;
 
-  @Column({ name: 'telegram_user_id', nullable: true, unique: true })
+  @Column({ type: 'varchar', name: 'telegram_user_id', nullable: true, unique: true })
   telegramUserId: string | null;
 
   @CreateDateColumn({ name: 'created_at' })

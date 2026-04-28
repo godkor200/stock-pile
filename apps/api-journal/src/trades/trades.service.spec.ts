@@ -161,8 +161,10 @@ describe('TradesService', () => {
     );
 
     // Real StocksService backed by mock stock repo
+    const noopCache = { get: jest.fn().mockResolvedValue(null), set: jest.fn(), del: jest.fn() } as any;
     stocksService = new StocksService(
       mockStockRepo as Repository<any>,
+      noopCache,
     );
 
     service = new TradesService(

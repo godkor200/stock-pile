@@ -2,17 +2,71 @@
 
 투자 일지 + 종목 분석 리포트 + 백테스팅을 묶은 개인 투자 어시스턴트.
 
-매매 입력은 **텔레그램 봇(자연어)** 과 **CSV 가져오기** 로만 가능합니다.
+매매 입력은 **웹 챗(자연어)** 과 **CSV 가져오기** 로만 가능합니다.
+
+## 시스템 아키텍처
+
+```
+클라이언트
+  └─ 웹 브라우저
+        │
+        ▼
+  [web :3005]  Next.js 14
+        │  REST / SSE
+        ▼
+  [api-gateway :3000]  JWT 인증 · 프록시
+        │
+        ├──────────────────────────────┐───────────────────────┐
+        ▼                              ▼                       ▼
+  [api-journal :3001]        [api-report :3002]     [api-backtest :3003]
+   NestJS                      NestJS                  Python FastAPI
+   매매일지 / 웹챗(SSE)          DART · 뉴스 · 지표       전략 DSL
+   CSV / 통계                   Claude 합성               시뮬레이션
+        │                              │                       │
+        ├──────────────────────────────┘                       │
+        ▼                                                      ▼
+  [PostgreSQL :5433]                                     [Redis :6379]
+  [Redis :6379]
+
+외부 API
+  Claude AI  ←── api-journal (웹챗), api-report (합성), api-backtest (DSL 파싱)
+  DART        ←── api-report
+  Naver       ←── api-report
+  pykrx · yfinance ←── api-backtest
+```
+
+## 매매 입력 흐름
+
+신규 매매는 **웹 챗(자연어)** 과 **CSV 가져오기** 두 경로로만 진입합니다.
+
+```
+웹 챗 경로 (SSE)
+  사용자 자연어 입력
+    → [web] SSE 요청
+    → [api-journal] ChatInputService
+         Claude Tool Use 로 구조화 추출
+    → StocksService 종목 매칭
+         ├─ 후보 多 → 모호 선택지 응답 → 사용자 확정
+         └─ 후보 1 → TradesService.createFromChat
+    → PostgreSQL (trades · positions)
+
+CSV 경로
+  사용자 CSV 업로드
+    → [web] POST /import/preview
+    → ImportService 브로커 자동감지 + preview 응답
+    → 사용자 확정
+    → TradesService.createFromCsv
+    → PostgreSQL (trades · positions)
+```
 
 ## 서비스 구조
 
 | 서비스 | 포트 | 역할 |
 |---|---|---|
 | `api-gateway` | 3000 | JWT 인증 + 프록시 라우팅 |
-| `api-journal` | 3001 | 매매 일지, 포지션, 통계, 챗봇 파싱 |
+| `api-journal` | 3001 | 매매 일지, 포지션, 통계, 웹챗(SSE) |
 | `api-report` | 3002 | DART/뉴스/기술지표 + Claude 분석 |
 | `api-backtest` | 3003 | 전략 DSL + vectorbt 백테스팅 (Python) |
-| `telegram-bot` | 3004 | 텔레그램 봇 webhook |
 | `web` | 3005 | Next.js 14 프론트엔드 |
 
 ## 빠른 시작
@@ -27,7 +81,7 @@
 
 ```bash
 cp .env.example .env
-# .env 파일에서 ANTHROPIC_API_KEY, DART_API_KEY, NAVER_*, TELEGRAM_BOT_TOKEN 입력
+# .env 파일에서 ANTHROPIC_API_KEY, DART_API_KEY, NAVER_* 입력
 ```
 
 ### 3. 인프라 시작
@@ -64,12 +118,6 @@ pnpm dev
 cd apps/api-backtest && source .venv/bin/activate
 uvicorn app.main:app --reload --port 3003
 ```
-
-## 텔레그램 봇 설정
-
-1. [@BotFather](https://t.me/BotFather) 에서 봇 생성 → `TELEGRAM_BOT_TOKEN` 발급
-2. 개발 환경: [ngrok](https://ngrok.com/) 또는 [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) 로 HTTPS 터널 생성
-3. 웹 `/settings/telegram` 에서 6자리 코드 발급 → 봇에 `/link <코드>` 입력
 
 ## API 문서
 

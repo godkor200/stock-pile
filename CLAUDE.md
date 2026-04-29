@@ -1,5 +1,21 @@
 # CLAUDE.md
 
+Claude Code 실행 지침. 세션 시작 시 반드시 이 파일을 먼저 읽는다.
+
+## 세션 시작 루틴
+
+1. 이 파일(`CLAUDE.md`) 읽기 — 프로젝트 목적, 스택, 규칙 파악
+2. `TASKS.md` 읽기 — 현재 상태 및 다음 태스크 확인 (없으면 넘어간다)
+3. 미완료 태스크 중 가장 번호가 낮은 것부터 순서대로 실행
+4. 태스크 완료 시 즉시 `TASKS.md`의 해당 항목을 `[x]`로 업데이트
+5. 코드 변경 시 관련 md 파일도 함께 업데이트 (`CLAUDE.md`, `TASKS.md`)
+
+## 파일 작업 규칙
+
+- 새 파일 작성 전 해당 경로가 존재하는지 확인
+- 기존 파일 덮어쓰기 전 내용 확인 후 수행
+- `src/` 외부 파일(`TASKS.md`, `CLAUDE.md`)은 내용 업데이트 외 삭제 금지
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview

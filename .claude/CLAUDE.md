@@ -1,5 +1,14 @@
 # 프로젝트 규칙
 
+## 코드 작성 원칙
+
+- **언어**: TypeScript strict mode
+- **스타일**: NestJS 공식 컨벤션 (모듈 / 서비스 / 컨트롤러 / 리포지토리 분리)
+- **의존성**: 기술 스택(`CLAUDE.md`) 외 라이브러리는 추가하지 않는다
+- **환경 변수**: 하드코딩 금지. 모든 설정값은 `.env` + `ConfigService`로 참조
+- **에러 처리**: 외부 API / DB 호출에 try-catch 필수. NestJS `Logger`로 로깅
+- **주석**: 복잡한 로직에만 한국어 주석 허용. 자명한 코드에는 주석 불필요
+
 ## 작업 범위
 - 현재 worktree의 담당 모듈만 수정한다
 - `packages/shared-types`, `packages/db-schema`는 읽기 전용 — 변경 필요 시 main 브랜치에 별도 PR

@@ -21,15 +21,20 @@ export function buildAnalysisPrompt(params: {
   financial: unknown;
   news: unknown;
   indicators: unknown;
+  ragContext?: string;
 }): string {
+  const ragSection = params.ragContext?.trim()
+    ? `\n## 관련 문서 (벡터 검색)\n${params.ragContext}\n`
+    : '';
+
   return `종목: ${params.ticker}
 
 ## 재무 데이터
 ${JSON.stringify(params.financial, null, 2)}
 
-## 최근 뉴스 (최대 10건)
+## 최근 뉴스 (최대 8건)
 ${JSON.stringify(params.news, null, 2)}
-
+${ragSection}
 ## 기술적 지표
 ${JSON.stringify(params.indicators, null, 2)}
 

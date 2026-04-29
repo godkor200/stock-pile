@@ -7,3 +7,5 @@ export { AnalysisReportEntity } from './entities/analysis-report.entity';
 export { StrategyEntity } from './entities/strategy.entity';
 export { BacktestResultEntity } from './entities/backtest-result.entity';
 export { ChatSessionEntity } from './entities/chat-session.entity';
+export { DocumentEmbeddingEntity } from './entities/document-embedding.entity';
+export type { EmbeddingSource } from './entities/document-embedding.entity';

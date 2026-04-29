@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -68,6 +68,12 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  ollama:
+    image: ollama/ollama:latest
+    restart: always
+    volumes:
+      - ollama_data:/root/.ollama
+
   api-report:
     build:
       context: .
@@ -82,7 +88,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
+      EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
       DART_API_KEY: ${DART_API_KEY}
       NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
       NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
@@ -94,6 +104,8 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+      ollama:
+        condition: service_started
 
   web:
     build:
@@ -126,3 +138,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  ollama_data:

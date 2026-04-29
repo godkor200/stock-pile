@@ -8,6 +8,7 @@ import { AnalysisReportEntity } from './entities/analysis-report.entity';
 import { StrategyEntity } from './entities/strategy.entity';
 import { BacktestResultEntity } from './entities/backtest-result.entity';
 import { ChatSessionEntity } from './entities/chat-session.entity';
+import { DocumentEmbeddingEntity } from './entities/document-embedding.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -25,6 +26,7 @@ export const AppDataSource = new DataSource({
     StrategyEntity,
     BacktestResultEntity,
     ChatSessionEntity,
+    DocumentEmbeddingEntity,
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,

@@ -5,6 +5,8 @@ import { AnalysisReportEntity } from '@stock-pile/db-schema';
 import { DartModule } from '../dart/dart.module';
 import { NewsModule } from '../news/news.module';
 import { IndicatorsModule } from '../indicators/indicators.module';
+import { LlmModule } from '../llm/llm.module';
+import { VectorModule } from '../vector/vector.module';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 
@@ -15,6 +17,8 @@ import { ReportsService } from './reports.service';
     DartModule,
     NewsModule,
     IndicatorsModule,
+    LlmModule,
+    VectorModule,
   ],
   controllers: [ReportsController],
   providers: [ReportsService],

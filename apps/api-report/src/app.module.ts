@@ -5,6 +5,7 @@ import {
   UserEntity,
   StockEntity,
   AnalysisReportEntity,
+  DocumentEmbeddingEntity,
 } from '@stock-pile/db-schema';
 import { DartModule } from './dart/dart.module';
 import { NewsModule } from './news/news.module';
@@ -23,7 +24,7 @@ import { ReportsModule } from './reports/reports.module';
         database: config.get('POSTGRES_DB', 'stockpile'),
         username: config.get('POSTGRES_USER', 'stockpile'),
         password: config.get('POSTGRES_PASSWORD', 'stockpile'),
-        entities: [UserEntity, StockEntity, AnalysisReportEntity],
+        entities: [UserEntity, StockEntity, AnalysisReportEntity, DocumentEmbeddingEntity],
         synchronize: false,
       }),
     }),

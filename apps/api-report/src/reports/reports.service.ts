@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
-import Anthropic from '@anthropic-ai/sdk';
 import { AnalysisReportEntity } from '@stock-pile/db-schema';
 import { Verdict } from '@stock-pile/shared-types';
 import { DartService } from '../dart/dart.service';
 import { NewsService } from '../news/news.service';
 import { IndicatorsService } from '../indicators/indicators.service';
+import { LlmService } from '../llm/llm.service';
+import { VectorStoreService } from '../vector/vector-store.service';
 import { STOCK_ANALYSIS_SYSTEM, buildAnalysisPrompt } from './prompts/stock-analysis.prompt';
 
 const CACHE_TTL_HOURS = 24;
@@ -24,7 +24,6 @@ interface ClaudeAnalysisResult {
 @Injectable()
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
-  private readonly claude: Anthropic;
 
   constructor(
     @InjectRepository(AnalysisReportEntity)
@@ -32,15 +31,18 @@ export class ReportsService {
     private readonly dart: DartService,
     private readonly news: NewsService,
     private readonly indicators: IndicatorsService,
-    private readonly config: ConfigService,
-  ) {
-    this.claude = new Anthropic({
-      apiKey: this.config.get<string>('ANTHROPIC_API_KEY'),
-    });
-  }
+    private readonly llm: LlmService,
+    private readonly vectorStore: VectorStoreService,
+  ) {}
 
   /**
    * 종목 분석 리포트 생성 (24h DB 캐시)
+   * 1. DB 캐시 확인
+   * 2. DART + 뉴스 + 기술지표 수집 (parallel)
+   * 3. 뉴스 임베딩 저장 (background)
+   * 4. RAG: 관련 문서 벡터 검색
+   * 5. LLM 합성
+   * 6. DB 저장
    */
   async generate(userId: string, ticker: string): Promise<AnalysisReportEntity> {
     const cached = await this.findCached(userId, ticker);
@@ -55,7 +57,17 @@ export class ReportsService {
       this.indicators.getIndicatorSummary(ticker),
     ]);
 
-    const newsForPrompt = newsItems.slice(0, 10).map((n) => ({
+    // 뉴스 임베딩 저장 (결과 기다리지 않음)
+    this.embedNewsInBackground(ticker, newsItems);
+
+    // RAG: 벡터 DB에서 관련 문서 검색
+    const ragDocs = await this.vectorStore.search(
+      `${ticker} 투자 분석 재무 성과`,
+      ticker,
+      5,
+    );
+
+    const newsForPrompt = newsItems.slice(0, 8).map((n) => ({
       title: n.title,
       date: n.pubDate,
     }));
@@ -65,24 +77,24 @@ export class ReportsService {
       financial: { statements: financial?.list ?? [], disclosures: disclosures?.list ?? [] },
       news: newsForPrompt,
       indicators: indicatorSummary,
+      ragContext: ragDocs.map((d) => d.content).join('\n\n---\n\n'),
     });
 
-    const response = await this.claude.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2048,
-      system: STOCK_ANALYSIS_SYSTEM,
-      messages: [{ role: 'user', content: prompt }],
-    });
+    const llmRes = await this.llm.chat(STOCK_ANALYSIS_SYSTEM, [
+      { role: 'user', content: prompt },
+    ]);
 
-    this.logger.log(
-      `Claude usage: in=${response.usage.input_tokens} out=${response.usage.output_tokens}`,
-    );
-
-    const text = response.content.find((b) => b.type === 'text')?.text ?? '{}';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const jsonMatch = llmRes.text.match(/\{[\s\S]*\}/);
     const analysis: ClaudeAnalysisResult = jsonMatch
-      ? JSON.parse(jsonMatch[0])
-      : { summary: text, strengths: [], weaknesses: [], riskFactors: [], verdict: Verdict.NEUTRAL, rationale: '' };
+      ? (JSON.parse(jsonMatch[0]) as ClaudeAnalysisResult)
+      : {
+          summary: llmRes.text,
+          strengths: [],
+          weaknesses: [],
+          riskFactors: [],
+          verdict: Verdict.NEUTRAL,
+          rationale: '',
+        };
 
     const report = this.reportRepo.create({
       userId,
@@ -108,7 +120,7 @@ export class ReportsService {
 
   private async findCached(userId: string, ticker: string): Promise<AnalysisReportEntity | null> {
     const cutoff = new Date(Date.now() - CACHE_TTL_HOURS * 60 * 60 * 1000);
-    const report = await this.reportRepo
+    return this.reportRepo
       .createQueryBuilder('r')
       .where('r.userId = :userId AND r.ticker = :ticker AND r.generatedAt > :cutoff', {
         userId,
@@ -117,6 +129,23 @@ export class ReportsService {
       })
       .orderBy('r.generatedAt', 'DESC')
       .getOne();
-    return report;
+  }
+
+  private embedNewsInBackground(ticker: string, newsItems: { title: string; description: string; pubDate: string }[]): void {
+    Promise.allSettled(
+      newsItems.slice(0, 20).map((n) =>
+        this.vectorStore.upsert({
+          ticker,
+          content: `${n.title}\n${n.description ?? ''}`.trim(),
+          source: 'NEWS',
+          title: n.title,
+          publishedAt: new Date(n.pubDate),
+        }),
+      ),
+    ).then(() => {
+      this.logger.log(`Embedded ${newsItems.length} news items for ${ticker}`);
+    }).catch(() => {
+      // 임베딩 실패는 리포트 생성에 영향 없음
+    });
   }
 }

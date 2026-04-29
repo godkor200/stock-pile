@@ -1,5 +1,6 @@
-const JOURNAL = process.env.NEXT_PUBLIC_JOURNAL_URL ?? '/api/journal';
-const REPORT = process.env.NEXT_PUBLIC_REPORT_URL ?? '/api/report';
+// 로컬: http://localhost:3001/api  |  프로덕션: /api/journal (Nginx rewrite → /api/*)
+const JOURNAL = process.env.NEXT_PUBLIC_JOURNAL_URL ?? 'http://localhost:3001/api';
+const REPORT = process.env.NEXT_PUBLIC_REPORT_URL ?? 'http://localhost:3002/api';
 
 function getUserId(): string {
   if (typeof window === 'undefined') return '';
@@ -25,6 +26,15 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
     throw new Error(text || res.statusText);
   }
   return res.json() as Promise<T>;
+}
+
+/** 앱 시작 시 한 번 호출 — 사용자 자동 등록 */
+export async function initUser(): Promise<void> {
+  try {
+    await request(`${JOURNAL}/users/init`, { method: 'POST' });
+  } catch {
+    // 실패해도 앱은 계속 실행
+  }
 }
 
 // ── chat ─────────────────────────────────────────────────
@@ -60,7 +70,7 @@ export function getPositions() {
   return request(`${JOURNAL}/positions`);
 }
 
-// ── reports ───────────────────────────────────────────────
+// ── reports (준비 중) ─────────────────────────────────────
 export function generateReport(ticker: string) {
   return request(`${REPORT}/reports`, {
     method: 'POST',

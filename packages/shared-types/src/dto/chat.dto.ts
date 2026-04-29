@@ -5,7 +5,7 @@ export interface ParseTradeFromChatDto {
 }
 
 export interface ParsedTradeFromChat {
-  side: TradeSide;
+  side: TradeSide | null;
   stockQuery: string;
   ticker?: string;
   quantity?: number;

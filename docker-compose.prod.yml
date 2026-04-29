@@ -58,6 +58,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      LLM_PROVIDER: ${LLM_PROVIDER:-groq}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-8b-instant}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       JOURNAL_PORT: 3001
     depends_on:

@@ -8,25 +8,29 @@ import {
   PositionEntity,
   AnalysisReportEntity,
   ChatSessionEntity,
+  StrategyEntity,
+  BacktestResultEntity,
 } from '@stock-pile/db-schema';
 import { TradesModule } from './trades/trades.module';
 import { PositionsModule } from './positions/positions.module';
 import { StocksModule } from './stocks/stocks.module';
 import { ChatModule } from './chat/chat.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
+      useFactory: (config: ConfigService) => 
+        ({
         type: 'postgres',
         host: config.get('POSTGRES_HOST', 'localhost'),
         port: config.get<number>('POSTGRES_PORT', 5432),
         database: config.get('POSTGRES_DB', 'stockpile'),
         username: config.get('POSTGRES_USER', 'stockpile'),
         password: config.get('POSTGRES_PASSWORD', 'stockpile'),
-        entities: [UserEntity, StockEntity, TradeEntity, PositionEntity, AnalysisReportEntity, ChatSessionEntity],
+        entities: [UserEntity, StockEntity, TradeEntity, PositionEntity, AnalysisReportEntity, ChatSessionEntity,StrategyEntity,BacktestResultEntity],
         synchronize: false,
         logging: config.get('NODE_ENV') === 'development',
       }),
@@ -35,6 +39,7 @@ import { ChatModule } from './chat/chat.module';
     PositionsModule,
     StocksModule,
     ChatModule,
+    UsersModule,
   ],
 })
 export class AppModule {}

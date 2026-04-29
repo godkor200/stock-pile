@@ -40,12 +40,16 @@ export class ChatController {
       : [];
 
     if (candidates.length === 0) {
-      return {
-        status: 'STOCK_NOT_FOUND',
-        parsed,
-        sessionId: session.sessionId,
-        prompt: `"${parsed.stockQuery}" 종목을 찾을 수 없습니다. 다시 입력해주세요.`,
-      };
+      if (!parsed.ticker) {
+        return {
+          status: 'STOCK_NOT_FOUND',
+          parsed,
+          sessionId: session.sessionId,
+          prompt: `"${parsed.stockQuery}" 종목을 찾을 수 없습니다. 티커 코드를 직접 입력해주세요 (예: 005930).`,
+        };
+      }
+      // 티커는 알지만 DB에 없는 경우 — 자동 등록 후 진행
+      await this.stocks.ensureExists(parsed.ticker);
     }
 
     if (candidates.length > 1 && !parsed.ticker) {
@@ -58,7 +62,7 @@ export class ChatController {
     }
 
     const stock = parsed.ticker
-      ? (await this.stocks.findByTicker(parsed.ticker)) ?? candidates[0]
+      ? ((await this.stocks.findByTicker(parsed.ticker)) ?? candidates[0])
       : candidates[0];
     parsed.ticker = stock.ticker;
 

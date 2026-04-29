@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -33,6 +34,7 @@ export class StrategyEntity {
   createdAt: Date;
 
   @ManyToOne(() => UserEntity, (user) => user.strategies)
+  @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
   @OneToMany(() => BacktestResultEntity, (result) => result.strategy)

@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -56,8 +57,10 @@ export class BacktestResultEntity {
   createdAt: Date;
 
   @ManyToOne(() => UserEntity)
+  @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
   @ManyToOne(() => StrategyEntity, (strategy) => strategy.backtestResults)
+  @JoinColumn({ name: 'strategy_id' })
   strategy: StrategyEntity;
 }

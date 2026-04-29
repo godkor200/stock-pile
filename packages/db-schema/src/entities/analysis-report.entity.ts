@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -41,8 +42,10 @@ export class AnalysisReportEntity {
   verdict: Verdict;
 
   @ManyToOne(() => UserEntity, (user) => user.analysisReports)
+  @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
   @ManyToOne(() => StockEntity, (stock) => stock.analysisReports)
+  @JoinColumn({ name: 'ticker' })
   stock: StockEntity;
 }

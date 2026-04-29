@@ -1,4 +1,4 @@
-import { Column, Entity, Index, ManyToOne, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 import { UserEntity } from './user.entity';
 import { StockEntity } from './stock.entity';
 
@@ -24,8 +24,10 @@ export class PositionEntity {
   updatedAt: Date;
 
   @ManyToOne(() => UserEntity, (user) => user.positions)
+  @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
   @ManyToOne(() => StockEntity, (stock) => stock.positions)
+  @JoinColumn({ name: 'ticker' })
   stock: StockEntity;
 }

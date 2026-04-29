@@ -46,7 +46,7 @@ export class TradesRepository {
 
     const qb: SelectQueryBuilder<TradeEntity> = this.repo
       .createQueryBuilder('trade')
-      .where('trade.userId = :userId', { userId });
+      .where('trade.user_id = :userId', { userId });
 
     if (ticker) {
       qb.andWhere('trade.ticker = :ticker', { ticker });
@@ -104,7 +104,7 @@ export class TradesRepository {
   ): Promise<TradeEntity[]> {
     const qb = this.repo
       .createQueryBuilder('trade')
-      .where('trade.userId = :userId', { userId })
+      .where('trade.user_id = :userId', { userId })
       .andWhere('(trade.reason IS NULL OR trade.emotion IS NULL)');
 
     if (groupBy === 'by_ticker') {

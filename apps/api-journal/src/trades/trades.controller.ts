@@ -23,14 +23,8 @@ import { UpdateTradeDto } from './dto/update-trade.dto';
 import { BulkUpdateTradeDto } from './dto/bulk-update-trade.dto';
 import { TradeFilterDto } from './dto/trade-filter.dto';
 
-/**
- * 헤더 Authorization: Bearer <userId> 를 userId 로 사용하는 stub guard.
- * 실제 인증 모듈은 별도 태스크에서 구현.
- */
 function getUserId(req: Request): string {
-  const auth = req.headers['authorization'];
-  if (auth?.startsWith('Bearer ')) return auth.slice(7);
-  return 'anonymous';
+  return (req.headers['x-user-id'] as string) ?? 'anonymous';
 }
 
 @ApiTags('Trades')

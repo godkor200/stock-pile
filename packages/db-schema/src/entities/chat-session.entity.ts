@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -12,7 +13,7 @@ import { UserEntity } from './user.entity';
 @Entity('chat_sessions')
 @Index(['userId'])
 export class ChatSessionEntity {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn('uuid', { name: 'session_id' })
   sessionId: string;
 
   @Column({ name: 'user_id' })
@@ -34,5 +35,6 @@ export class ChatSessionEntity {
   createdAt: Date;
 
   @ManyToOne(() => UserEntity, (user) => user.chatSessions)
+  @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 }

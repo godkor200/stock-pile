@@ -39,6 +39,10 @@ coverage/
 # Turbo
 .turbo/
 
+# Production env (secrets)
+.env.prod
+nginx/certs/
+
 # Python venv
 apps/api-backtest/.venv/
 apps/api-backtest/venv/

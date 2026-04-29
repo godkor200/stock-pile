@@ -1,5 +1,5 @@
-const JOURNAL = process.env.NEXT_PUBLIC_JOURNAL_URL ?? 'http://localhost:3001';
-const REPORT = process.env.NEXT_PUBLIC_REPORT_URL ?? 'http://localhost:3002';
+const JOURNAL = process.env.NEXT_PUBLIC_JOURNAL_URL ?? '/api/journal';
+const REPORT = process.env.NEXT_PUBLIC_REPORT_URL ?? '/api/report';
 
 function getUserId(): string {
   if (typeof window === 'undefined') return '';

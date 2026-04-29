@@ -20,6 +20,14 @@ export class PositionsService {
     private readonly positionRepo: Repository<PositionEntity>,
   ) {}
 
+  /** 사용자 보유 포지션 전체 조회 */
+  async findAll(userId: string): Promise<PositionEntity[]> {
+    return this.positionRepo.find({
+      where: { userId },
+      order: { ticker: 'ASC' },
+    });
+  }
+
   async applyTrade(
     params: ApplyTradeParams,
     em: EntityManager,

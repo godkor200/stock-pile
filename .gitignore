@@ -26,8 +26,9 @@ npm-debug.log*
 pnpm-debug.log*
 
 # Editor
-.vscode/
+.vscode/*.log
 .idea/
+# .vscode/ 는 팀 공유 설정(settings.json, extensions.json)을 포함하므로 추적
 *.swp
 *.swo
 .DS_Store

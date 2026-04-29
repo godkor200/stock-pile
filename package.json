@@ -2,7 +2,7 @@
   "name": "stock-pile",
   "private": true,
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "kill -9 $(lsof -ti :3001 :3002 :3005 2>/dev/null) 2>/dev/null; turbo run dev",
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",

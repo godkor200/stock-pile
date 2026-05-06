@@ -120,7 +120,7 @@ export class ReportsService {
     });
 
     const saved = await this.reportRepo.save(report);
-    return this.reportRepo.findOne({ where: { id: saved.id }, relations: ['stock'] }) ?? saved;
+    return (await this.reportRepo.findOne({ where: { id: saved.id }, relations: ['stock'] })) ?? saved;
   }
 
   async findByUser(userId: string, ticker?: string): Promise<AnalysisReportEntity[]> {

@@ -27,6 +27,7 @@ interface ChatResponse {
   candidates?: { ticker: string; name: string }[];
   prompt?: string;
   message?: string;
+  advisedTicker?: string;
 }
 
 interface Message {

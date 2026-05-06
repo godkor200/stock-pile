@@ -394,6 +394,9 @@ importers:
 
   packages/db-schema:
     dependencies:
+      '@stock-pile/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
       pg:
         specifier: ^8.11.0
         version: 8.20.0
@@ -404,9 +407,6 @@ importers:
         specifier: ^0.3.20
         version: 0.3.28(ioredis@5.10.1)(pg@8.20.0)(ts-node@10.9.2(@types/node@20.19.39)(typescript@5.9.3))
     devDependencies:
-      '@stock-pile/shared-types':
-        specifier: workspace:*
-        version: link:../shared-types
       '@stock-pile/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig

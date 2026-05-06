@@ -2,14 +2,19 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
-  UserEntity,
-  StockEntity,
   AnalysisReportEntity,
+  BacktestResultEntity,
+  ChatSessionEntity,
   DocumentEmbeddingEntity,
+  PositionEntity,
+  StockEntity,
+  StrategyEntity,
+  TradeEntity,
+  UserEntity,
 } from '@stock-pile/db-schema';
 import { DartModule } from './dart/dart.module';
-import { NewsModule } from './news/news.module';
 import { IndicatorsModule } from './indicators/indicators.module';
+import { NewsModule } from './news/news.module';
 import { ReportsModule } from './reports/reports.module';
 
 @Module({
@@ -24,7 +29,17 @@ import { ReportsModule } from './reports/reports.module';
         database: config.get('POSTGRES_DB', 'stockpile'),
         username: config.get('POSTGRES_USER', 'stockpile'),
         password: config.get('POSTGRES_PASSWORD', 'stockpile'),
-        entities: [UserEntity, StockEntity, AnalysisReportEntity, DocumentEmbeddingEntity],
+        entities: [
+          UserEntity,
+          StockEntity,
+          AnalysisReportEntity,
+          DocumentEmbeddingEntity,
+          TradeEntity,
+          PositionEntity,
+          StrategyEntity,
+          ChatSessionEntity,
+          BacktestResultEntity,
+        ],
         synchronize: false,
       }),
     }),

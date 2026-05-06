@@ -2,14 +2,19 @@
 const JOURNAL = process.env.NEXT_PUBLIC_JOURNAL_URL ?? 'http://localhost:3001/api';
 const REPORT = process.env.NEXT_PUBLIC_REPORT_URL ?? 'http://localhost:3002/api';
 
-function getUserId(): string {
+export function getUserId(): string {
   if (typeof window === 'undefined') return '';
-  let id = localStorage.getItem('sp_user_id');
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem('sp_user_id', id);
-  }
-  return id;
+  return localStorage.getItem('sp_user_id') ?? '';
+}
+
+export function isLoggedIn(): boolean {
+  return !!getUserId();
+}
+
+export function logout(): void {
+  localStorage.removeItem('sp_user_id');
+  localStorage.removeItem('sp_token');
+  window.location.href = '/auth';
 }
 
 async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
@@ -28,13 +33,35 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-/** 앱 시작 시 한 번 호출 — 사용자 자동 등록 */
-export async function initUser(): Promise<void> {
-  try {
-    await request(`${JOURNAL}/users/init`, { method: 'POST' });
-  } catch {
-    // 실패해도 앱은 계속 실행
+// ── auth ──────────────────────────────────────────────────
+export async function signup(email: string, password: string): Promise<void> {
+  const res = await fetch(`${JOURNAL}/auth/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) {
+    const body = (await res.json()) as { message?: string };
+    throw new Error(body.message ?? res.statusText);
   }
+  const { userId, token } = (await res.json()) as { userId: string; token: string };
+  localStorage.setItem('sp_user_id', userId);
+  localStorage.setItem('sp_token', token);
+}
+
+export async function login(email: string, password: string): Promise<void> {
+  const res = await fetch(`${JOURNAL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) {
+    const body = (await res.json()) as { message?: string };
+    throw new Error(body.message ?? res.statusText);
+  }
+  const { userId, token } = (await res.json()) as { userId: string; token: string };
+  localStorage.setItem('sp_user_id', userId);
+  localStorage.setItem('sp_token', token);
 }
 
 // ── chat ─────────────────────────────────────────────────
@@ -68,6 +95,30 @@ export function getTrades(params?: { ticker?: string; page?: number }) {
 // ── positions ─────────────────────────────────────────────
 export function getPositions() {
   return request(`${JOURNAL}/positions`);
+}
+
+// ── CSV import ────────────────────────────────────────────
+export async function importCsv(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${JOURNAL}/trades/import-csv`, {
+    method: 'POST',
+    headers: { 'x-user-id': getUserId() },
+    body: formData,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || res.statusText);
+  }
+  return res.json();
+}
+
+export function getCsvTemplate() {
+  const a = document.createElement('a');
+  a.href = `${JOURNAL}/trades/import-csv/template`;
+  a.download = 'trades_template.csv';
+  a.click();
 }
 
 // ── reports (준비 중) ─────────────────────────────────────

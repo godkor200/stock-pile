@@ -46,6 +46,7 @@ export class TradesRepository {
 
     const qb: SelectQueryBuilder<TradeEntity> = this.repo
       .createQueryBuilder('trade')
+      .leftJoinAndSelect('trade.stock', 'stock')
       .where('trade.user_id = :userId', { userId });
 
     if (ticker) {

@@ -14,7 +14,7 @@ const YAHOO_BASE = 'https://query1.finance.yahoo.com';
 interface YahooChartResponse {
   chart: {
     result: Array<{
-      meta: { symbol: string };
+      meta: { symbol: string; shortName?: string; longName?: string };
       timestamp: number[];
       indicators: {
         quote: Array<{
@@ -35,6 +35,31 @@ export class IndicatorsService {
   private readonly logger = new Logger(IndicatorsService.name);
 
   constructor(private readonly cache: RedisCacheService) {}
+
+  /**
+   * Yahoo Finance에서 종목명을 조회한다. 실패 시 null 반환.
+   * KOSDAQ 종목은 .KS 실패 후 .KQ로 재시도한다.
+   */
+  async fetchStockName(ticker: string): Promise<string | null> {
+    const symbols = /^\d{6}$/.test(ticker)
+      ? [`${ticker}.KS`, `${ticker}.KQ`]
+      : [ticker];
+
+    for (const symbol of symbols) {
+      try {
+        const { data } = await axios.get<YahooChartResponse>(
+          `${YAHOO_BASE}/v8/finance/chart/${encodeURIComponent(symbol)}`,
+          { params: { interval: '1d', range: '1d' }, timeout: 8000 },
+        );
+        const meta = data?.chart?.result?.[0]?.meta;
+        const name = meta?.shortName ?? meta?.longName ?? null;
+        if (name) return name;
+      } catch {
+        // 다음 심볼 시도
+      }
+    }
+    return null;
+  }
 
   private buildYahooSymbol(ticker: string): string {
     // Korean stocks need .KS suffix; NASDAQ tickers kept as-is

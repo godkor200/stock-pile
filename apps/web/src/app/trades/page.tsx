@@ -11,6 +11,7 @@ interface Trade {
   price: number;
   tradedAt: string;
   reason?: string;
+  stock?: { name: string };
 }
 
 interface PaginatedTrades {
@@ -55,7 +56,12 @@ export default function TradesPage() {
                   >
                     {t.side === 'BUY' ? '매수' : '매도'}
                   </span>
-                  <span className="font-medium">{t.ticker}</span>
+                  <div>
+                    <span className="font-medium">{t.stock?.name ?? t.ticker}</span>
+                    {t.stock?.name && t.stock.name !== t.ticker && (
+                      <span className="ml-2 text-xs text-gray-400">{t.ticker}</span>
+                    )}
+                  </div>
                 </div>
                 <span className="text-sm text-gray-500">
                   {new Date(t.tradedAt).toLocaleDateString('ko-KR')}

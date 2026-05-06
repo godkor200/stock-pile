@@ -20,10 +20,11 @@ export class PositionsService {
     private readonly positionRepo: Repository<PositionEntity>,
   ) {}
 
-  /** 사용자 보유 포지션 전체 조회 */
+  /** 사용자 보유 포지션 전체 조회 (종목명 포함) */
   async findAll(userId: string): Promise<PositionEntity[]> {
     return this.positionRepo.find({
       where: { userId },
+      relations: ['stock'],
       order: { ticker: 'ASC' },
     });
   }

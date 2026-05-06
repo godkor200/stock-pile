@@ -18,6 +18,7 @@ interface Report {
   generatedAt: string;
   verdict: string;
   claudeAnalysis: string;
+  stock?: { name: string };
 }
 
 const VERDICT_STYLE: Record<string, string> = {
@@ -100,7 +101,12 @@ export default function ReportsPage() {
         return (
           <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">{selected.ticker}</h2>
+              <div>
+                <h2 className="text-lg font-bold">{selected.stock?.name ?? selected.ticker}</h2>
+                {selected.stock?.name && selected.stock.name !== selected.ticker && (
+                  <p className="text-xs text-gray-400">{selected.ticker}</p>
+                )}
+              </div>
               <span className={`px-3 py-1 rounded-full text-sm font-bold ${VERDICT_STYLE[selected.verdict] ?? ''}`}>
                 {selected.verdict}
               </span>
@@ -162,7 +168,12 @@ export default function ReportsPage() {
               className="w-full text-left bg-white border border-gray-200 rounded-xl px-4 py-3 hover:border-blue-300 transition-colors"
             >
               <div className="flex items-center justify-between">
-                <span className="font-medium">{r.ticker}</span>
+                <div>
+                  <span className="font-medium">{r.stock?.name ?? r.ticker}</span>
+                  {r.stock?.name && r.stock.name !== r.ticker && (
+                    <span className="ml-2 text-xs text-gray-400">{r.ticker}</span>
+                  )}
+                </div>
                 <div className="flex items-center gap-3">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${VERDICT_STYLE[r.verdict] ?? ''}`}>
                     {r.verdict}

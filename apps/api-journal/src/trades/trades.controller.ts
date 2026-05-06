@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Delete,
   Param,
@@ -10,14 +11,21 @@ import {
   HttpStatus,
   ParseUUIDPipe,
   Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiBearerAuth,
   ApiQuery,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
-import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Request, Response } from 'express';
 import { TradesService } from './trades.service';
 import { UpdateTradeDto } from './dto/update-trade.dto';
 import { BulkUpdateTradeDto } from './dto/bulk-update-trade.dto';
@@ -32,6 +40,34 @@ function getUserId(req: Request): string {
 @Controller('trades')
 export class TradesController {
   constructor(private readonly tradesService: TradesService) {}
+
+  @Get('import-csv/template')
+  @ApiOperation({ summary: 'CSV 템플릿 파일 다운로드' })
+  downloadTemplate(@Res() res: Response) {
+    const csv = [
+      'ticker,side,quantity,price,tradedAt,reason,emotion',
+      '005930,매수,10,70000,2024-01-15,실적 기대,PLANNED',
+      '035720,매도,5,60000,2024-01-20,,',
+    ].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="trades_template.csv"');
+    res.send('﻿' + csv); // BOM for Excel 한글 호환
+  }
+
+  @Post('import-csv')
+  @ApiOperation({ summary: 'CSV 파일로 매매 일괄 입력' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  async importCsv(
+    @Req() req: Request,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('CSV 파일을 첨부해주세요.');
+    const userId = getUserId(req);
+    return this.tradesService.importFromCsv(userId, file.buffer);
+  }
 
   @Get()
   @ApiOperation({ summary: '매매 목록 조회 (페이지네이션, 필터)' })

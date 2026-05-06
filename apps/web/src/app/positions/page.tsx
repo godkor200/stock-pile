@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import { getPositions } from '@/lib/api';
 
 interface Position {
-  id: string;
   ticker: string;
   quantity: number;
   avgPrice: number;
   realizedPnl: number;
+  stock?: { name: string; market: string };
 }
 
 export default function PositionsPage() {
@@ -34,23 +34,26 @@ export default function PositionsPage() {
       ) : (
         <div className="space-y-3">
           {positions.map((p) => (
-            <div key={p.id} className="bg-white border border-gray-200 rounded-xl p-4">
+            <div key={p.ticker} className="bg-white border border-gray-200 rounded-xl p-4">
               <div className="flex items-center justify-between">
-                <span className="font-medium">{p.ticker}</span>
+                <div>
+                  <span className="font-medium">{p.stock?.name ?? p.ticker}</span>
+                  <span className="ml-2 text-xs text-gray-400">{p.ticker}</span>
+                </div>
                 <span className="text-sm text-gray-500">
-                  {p.quantity.toLocaleString()}주
+                  {Number(p.quantity).toLocaleString()}주
                 </span>
               </div>
               <div className="mt-2 text-sm text-gray-600">
-                평균단가 {p.avgPrice.toLocaleString()}원
+                평균단가 {Number(p.avgPrice).toLocaleString()}원
               </div>
               <div
                 className={`mt-1 text-sm font-medium ${
-                  p.realizedPnl >= 0 ? 'text-red-600' : 'text-blue-600'
+                  Number(p.realizedPnl) >= 0 ? 'text-red-600' : 'text-blue-600'
                 }`}
               >
-                실현손익 {p.realizedPnl >= 0 ? '+' : ''}
-                {p.realizedPnl.toLocaleString()}원
+                실현손익 {Number(p.realizedPnl) >= 0 ? '+' : ''}
+                {Number(p.realizedPnl).toLocaleString()}원
               </div>
             </div>
           ))}

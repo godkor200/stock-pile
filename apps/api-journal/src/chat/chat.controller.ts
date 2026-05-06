@@ -13,6 +13,8 @@ import { ChatMessageDto, ClarifyDto, ConfirmDto } from './dto/chat-message.dto';
 import { StocksService } from '../stocks/stocks.service';
 import { TradesService } from '../trades/trades.service';
 import { CreateTradeDto } from '../trades/dto/create-trade.dto';
+import { UsersService } from '../users/users.service';
+import { ChatAdvisorService } from './chat-advisor.service';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -22,6 +24,8 @@ export class ChatController {
     private readonly chatSession: ChatSessionService,
     private readonly stocks: StocksService,
     private readonly trades: TradesService,
+    private readonly users: UsersService,
+    private readonly advisor: ChatAdvisorService,
   ) {}
 
   @Post('parse')
@@ -31,6 +35,19 @@ export class ChatController {
     @Headers('x-user-id') userId: string,
   ): Promise<ChatParseResponseDto> {
     if (!userId) throw new UnauthorizedException();
+
+    await this.users.findOrCreate(userId);
+
+    // 1단계: 의도 분류 + 종목 추출 — 투자 질문이면 어드바이저로 라우팅
+    const { intent, ticker: mentionedTicker } = await this.advisor.classify(dto.message);
+    if (intent === 'INVESTMENT_QUERY') {
+      const message = await this.advisor.advise(userId, dto.message, mentionedTicker);
+      return {
+        status: 'CHAT_RESPONSE',
+        message,
+        ...(mentionedTicker ? { advisedTicker: mentionedTicker } : {}),
+      };
+    }
 
     const parsed = await this.chatInput.parse(dto.message);
     const session = await this.chatSession.create(userId, parsed);
@@ -86,6 +103,7 @@ export class ChatController {
   ): Promise<ChatParseResponseDto> {
     if (!userId) throw new UnauthorizedException();
 
+    await this.users.findOrCreate(userId);
     const session = await this.chatSession.update(
       dto.sessionId,
       userId,
@@ -114,6 +132,7 @@ export class ChatController {
   ) {
     if (!userId) throw new UnauthorizedException();
 
+    await this.users.findOrCreate(userId);
     const session = await this.chatSession.findActiveByUser(dto.sessionId, userId);
     const p = session.parsedData;
 

@@ -20,6 +20,15 @@
 - [x] T-10: .env 경로 수정 — envFilePath: ['.env', '../../.env']
 - [x] T-11: VS Code Prettier 저장 시 자동 포맷 설정
 - [x] T-12: CLAUDE.md 세션 시작 루틴 추가
+- [x] T-22: ChatController FK 위반 수정 — UsersService.findOrCreate를 parse/clarify/confirm 진입 시 호출
+- [x] T-23: 챗봇 투자 질문 답변 기능 (2-step pipeline: 의도 분류 → 어드바이저 LLM)
+
+---
+
+## 완료된 태스크 (추가)
+
+- [x] T-24: 이메일 회원가입/로그인 (crypto 내장, POST /auth/signup, /auth/login)
+- [x] T-25: CSV 가져오기 nav 임시 비활성화 (주석 처리)
 
 ---
 
@@ -54,10 +63,9 @@
 
 ### 이후 개선 (2차)
 
-- [ ] T-17: 챗봇 — 종목명만 있고 티커 없을 때 처리 개선
-  (현재: STOCK_NOT_FOUND 반환 → 개선안: 종목명으로 DB 퍼지 검색)
-
-- [ ] T-18: 주요 한국 종목 시드 데이터 (KOSPI 200 기본 종목 stocks 테이블 삽입)
+- [x] T-17: 챗봇 — 자동 등록 시 Yahoo Finance에서 market(KOSPI/KOSDAQ) 자동 감지
+- [x] T-18: 주요 한국 종목 시드 데이터 70개 (packages/db-schema/src/seeds/stocks.seed.ts)
+  - 실행: `export $(grep -v '^#' .env | grep -v '^$' | xargs) && pnpm --filter db-schema seed:stocks`
 
 - [ ] T-19: api-report 로컬 검증
   - `ANTHROPIC_API_KEY` 또는 Ollama 실행 필요
@@ -65,7 +73,7 @@
 
 - [ ] T-20: 월간 코칭 리포트 (api-journal — Claude API 기반 매매 패턴 분석)
 
-- [ ] T-21: CSV 일괄 매매 입력 구현
+- [x] T-21: CSV 일괄 매매 입력 구현 (POST /trades/import-csv, /import 페이지, 템플릿 다운로드)
 
 ---
 

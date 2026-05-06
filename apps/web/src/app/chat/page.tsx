@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { parseChat, clarifyChat, confirmChat } from '@/lib/api';
 
-type Status = 'READY_TO_CONFIRM' | 'AMBIGUOUS_STOCK' | 'NEEDS_CLARIFICATION' | 'STOCK_NOT_FOUND';
+type Status = 'READY_TO_CONFIRM' | 'AMBIGUOUS_STOCK' | 'NEEDS_CLARIFICATION' | 'STOCK_NOT_FOUND' | 'CHAT_RESPONSE';
 
 interface ParsedTrade {
   side: string;
@@ -21,23 +22,25 @@ interface ParsedTrade {
 
 interface ChatResponse {
   status: Status;
-  parsed: ParsedTrade;
-  sessionId: string;
+  parsed?: ParsedTrade;
+  sessionId?: string;
   candidates?: { ticker: string; name: string }[];
   prompt?: string;
+  message?: string;
 }
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   response?: ChatResponse;
+  advisedTicker?: string;
 }
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: '안녕하세요! 매매 내역을 자연어로 입력해주세요.\n예) "삼성전자 10주 70000원에 매수했어"',
+      content: '안녕하세요! 매매 기록을 남기거나 투자 질문을 해주세요.\n예) "삼성전자 10주 70000원에 매수" / "지금 삼성전자 사도 돼?"',
     },
   ]);
   const [input, setInput] = useState('');
@@ -67,7 +70,7 @@ export default function ChatPage() {
       } else {
         res = (await parseChat(text)) as ChatResponse;
       }
-      setSessionId(res.sessionId);
+      setSessionId(res.sessionId ?? null);
       handleResponse(res);
     } catch (e) {
       addMessage({ role: 'assistant', content: `오류가 발생했습니다: ${(e as Error).message}` });
@@ -77,7 +80,14 @@ export default function ChatPage() {
   }
 
   function handleResponse(res: ChatResponse) {
-    if (res.status === 'STOCK_NOT_FOUND') {
+    if (res.status === 'CHAT_RESPONSE') {
+      addMessage({
+        role: 'assistant',
+        content: res.message ?? '답변을 가져올 수 없습니다.',
+        advisedTicker: res.advisedTicker,
+      });
+      setSessionId(null);
+    } else if (res.status === 'STOCK_NOT_FOUND') {
       addMessage({ role: 'assistant', content: res.prompt ?? '종목을 찾을 수 없습니다.' });
       setSessionId(null);
     } else if (res.status === 'AMBIGUOUS_STOCK') {
@@ -94,7 +104,7 @@ export default function ChatPage() {
     setLoading(true);
     try {
       const res = (await clarifyChat(sessionId, ticker)) as ChatResponse;
-      setSessionId(res.sessionId);
+      setSessionId(res.sessionId ?? null);
       handleResponse(res);
     } catch (e) {
       addMessage({ role: 'assistant', content: `오류: ${(e as Error).message}` });
@@ -134,6 +144,18 @@ export default function ChatPage() {
             >
               {msg.content}
 
+              {/* 특정 종목 조언 시 종목 분석 탭 안내 */}
+              {msg.advisedTicker && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <Link
+                    href="/reports"
+                    className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700"
+                  >
+                    📊 종목 분석 탭에서 재무·뉴스·기술지표 기반의 더 정확한 분석을 확인하세요 →
+                  </Link>
+                </div>
+              )}
+
               {/* 종목 후보 선택 */}
               {msg.response?.status === 'AMBIGUOUS_STOCK' && msg.response.candidates && (
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -150,7 +172,7 @@ export default function ChatPage() {
               )}
 
               {/* 확인 카드 */}
-              {msg.response?.status === 'READY_TO_CONFIRM' && (
+              {msg.response?.status === 'READY_TO_CONFIRM' && msg.response.parsed && (
                 <div className="mt-3 bg-gray-50 rounded-xl p-3 text-xs space-y-1">
                   <div className="flex justify-between">
                     <span className="text-gray-500">종목</span>

@@ -14,29 +14,43 @@ export interface LlmResponse {
 }
 
 /**
- * LLM 추상화 — LLM_PROVIDER=ollama|anthropic 으로 전환
- * Ollama는 OpenAI 호환 API(/api/chat)를 사용
+ * LLM 추상화 — LLM_PROVIDER=ollama|anthropic|groq
+ * ANTHROPIC_API_KEY 없으면 자동으로 Groq로 폴백
  */
 @Injectable()
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
-  private readonly provider: 'ollama' | 'anthropic';
+  private readonly provider: 'ollama' | 'anthropic' | 'groq';
   private readonly ollamaUrl: string;
   private readonly ollamaModel: string;
   private readonly anthropic: Anthropic;
+  private readonly groqApiKey: string;
+  private readonly groqModel: string;
 
   constructor(private readonly config: ConfigService) {
-    this.provider = (config.get('LLM_PROVIDER', 'anthropic') as 'ollama' | 'anthropic');
+    const anthropicKey = config.get<string>('ANTHROPIC_API_KEY', '');
+    const requestedProvider = config.get('LLM_PROVIDER', 'anthropic') as string;
+
+    // ANTHROPIC_API_KEY 없으면 Groq로 자동 폴백
+    if (requestedProvider === 'anthropic' && !anthropicKey) {
+      this.provider = 'groq';
+      this.logger.warn('ANTHROPIC_API_KEY 없음 → Groq로 폴백');
+    } else {
+      this.provider = requestedProvider as 'ollama' | 'anthropic' | 'groq';
+    }
+
     this.ollamaUrl = config.get('OLLAMA_URL', 'http://localhost:11434');
     this.ollamaModel = config.get('OLLAMA_MODEL', 'qwen2.5:7b');
-    this.anthropic = new Anthropic({ apiKey: config.get('ANTHROPIC_API_KEY') });
+    this.anthropic = new Anthropic({ apiKey: anthropicKey || 'placeholder' });
+    this.groqApiKey = config.get('GROQ_API_KEY', '');
+    this.groqModel = config.get('GROQ_MODEL', 'llama-3.3-70b-versatile');
+
     this.logger.log(`LLM provider: ${this.provider}`);
   }
 
   async chat(system: string, messages: LlmMessage[], maxTokens = 2048): Promise<LlmResponse> {
-    if (this.provider === 'ollama') {
-      return this.ollamaChat(system, messages, maxTokens);
-    }
+    if (this.provider === 'ollama') return this.ollamaChat(system, messages, maxTokens);
+    if (this.provider === 'groq') return this.groqChat(system, messages, maxTokens);
     return this.anthropicChat(system, messages, maxTokens);
   }
 
@@ -95,5 +109,46 @@ export class LlmService {
 
     const text = res.content.find((b) => b.type === 'text')?.text ?? '';
     return { text, inputTokens: res.usage.input_tokens, outputTokens: res.usage.output_tokens };
+  }
+
+  private async groqChat(
+    system: string,
+    messages: LlmMessage[],
+    maxTokens: number,
+  ): Promise<LlmResponse> {
+    if (!this.groqApiKey) throw new Error('GROQ_API_KEY가 설정되지 않았습니다');
+
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.groqApiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.groqModel,
+        max_tokens: maxTokens,
+        messages: [{ role: 'system', content: system }, ...messages],
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Groq error: ${res.status} ${err}`);
+    }
+
+    const data = (await res.json()) as {
+      choices: { message: { content: string } }[];
+      usage: { prompt_tokens: number; completion_tokens: number };
+    };
+
+    this.logger.log(
+      `Groq usage: in=${data.usage.prompt_tokens} out=${data.usage.completion_tokens}`,
+    );
+
+    return {
+      text: data.choices[0]?.message.content ?? '',
+      inputTokens: data.usage.prompt_tokens,
+      outputTokens: data.usage.completion_tokens,
+    };
   }
 }

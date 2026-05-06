@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AnalysisReportEntity } from '@stock-pile/db-schema';
-import { Verdict } from '@stock-pile/shared-types';
+import { AnalysisReportEntity, StockEntity } from '@stock-pile/db-schema';
+import { Market, Verdict } from '@stock-pile/shared-types';
 import { DartService } from '../dart/dart.service';
 import { NewsService } from '../news/news.service';
 import { IndicatorsService } from '../indicators/indicators.service';
@@ -28,6 +28,8 @@ export class ReportsService {
   constructor(
     @InjectRepository(AnalysisReportEntity)
     private readonly reportRepo: Repository<AnalysisReportEntity>,
+    @InjectRepository(StockEntity)
+    private readonly stockRepo: Repository<StockEntity>,
     private readonly dart: DartService,
     private readonly news: NewsService,
     private readonly indicators: IndicatorsService,
@@ -96,6 +98,17 @@ export class ReportsService {
           rationale: '',
         };
 
+    // stocks FK 보장: 없거나 이름이 ticker와 같으면 Yahoo Finance에서 실제 이름 조회
+    const existing = await this.stockRepo.findOne({ where: { ticker } });
+    const needsName = !existing || existing.name === ticker;
+    const stockName = needsName
+      ? ((await this.indicators.fetchStockName(ticker)) ?? ticker)
+      : existing.name;
+    await this.stockRepo.upsert(
+      { ticker, name: stockName, market: Market.KOSPI, sector: null },
+      { conflictPaths: ['ticker'], skipUpdateIfNoValuesChanged: false },
+    );
+
     const report = this.reportRepo.create({
       userId,
       ticker,
@@ -106,13 +119,15 @@ export class ReportsService {
       verdict: analysis.verdict ?? Verdict.NEUTRAL,
     });
 
-    return this.reportRepo.save(report);
+    const saved = await this.reportRepo.save(report);
+    return this.reportRepo.findOne({ where: { id: saved.id }, relations: ['stock'] }) ?? saved;
   }
 
   async findByUser(userId: string, ticker?: string): Promise<AnalysisReportEntity[]> {
     const where = ticker ? { userId, ticker } : { userId };
     return this.reportRepo.find({
       where,
+      relations: ['stock'],
       order: { generatedAt: 'DESC' },
       take: 20,
     });

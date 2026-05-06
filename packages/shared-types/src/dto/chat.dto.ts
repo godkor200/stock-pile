@@ -20,11 +20,17 @@ export interface ParsedTradeFromChat {
 }
 
 export interface ChatParseResponseDto {
-  status: 'READY_TO_CONFIRM' | 'AMBIGUOUS_STOCK' | 'NEEDS_CLARIFICATION' | 'STOCK_NOT_FOUND';
-  parsed: ParsedTradeFromChat;
-  sessionId: string;
+  status: 'READY_TO_CONFIRM' | 'AMBIGUOUS_STOCK' | 'NEEDS_CLARIFICATION' | 'STOCK_NOT_FOUND' | 'CHAT_RESPONSE';
+  /** 매매 파싱 결과 — CHAT_RESPONSE 시 없음 */
+  parsed?: ParsedTradeFromChat;
+  /** 세션 ID — CHAT_RESPONSE 시 없음 */
+  sessionId?: string;
   candidates?: StockCandidateDto[];
   prompt?: string;
+  /** CHAT_RESPONSE 시 어드바이저 답변 */
+  message?: string;
+  /** CHAT_RESPONSE 시 언급된 종목 ticker (있을 때만) */
+  advisedTicker?: string;
 }
 
 export interface StockCandidateDto {

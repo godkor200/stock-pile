@@ -12,13 +12,8 @@ async function proxy(req: NextRequest, path: string): Promise<NextResponse> {
   });
   headers.set('accept-encoding', 'identity');
 
-  const isFormData = req.headers.get('content-type')?.includes('multipart/form-data');
   const body =
-    req.method === 'GET' || req.method === 'HEAD'
-      ? undefined
-      : isFormData
-        ? await req.formData()
-        : await req.text();
+    req.method === 'GET' || req.method === 'HEAD' ? undefined : await req.arrayBuffer();
 
   const upstream = await fetch(target, {
     method: req.method,

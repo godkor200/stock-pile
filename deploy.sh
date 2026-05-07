@@ -15,10 +15,19 @@ if [ ! -f nginx/certs/fullchain.pem ]; then
   mkdir -p nginx/certs
   # certbot standalone으로 발급 (80 포트가 비어 있어야 함)
   DOMAIN=$(grep DOMAIN .env.prod | cut -d= -f2)
-  sudo certbot certonly --standalone -d "$DOMAIN" --non-interactive --agree-tos -m admin@"$DOMAIN"
+  sudo certbot certonly --standalone -d "$DOMAIN" --non-interactive --agree-tos -m godkor200@gmail.com
   sudo cp /etc/letsencrypt/live/"$DOMAIN"/fullchain.pem nginx/certs/
   sudo cp /etc/letsencrypt/live/"$DOMAIN"/privkey.pem nginx/certs/
   sudo chmod 644 nginx/certs/*.pem
+fi
+
+echo "==> Nginx 설정 선택 (인증서 존재 여부 기준)"
+if [ -f nginx/certs/fullchain.pem ] && [ -f nginx/certs/privkey.pem ]; then
+  export NGINX_CONF=./nginx/nginx.conf
+  echo "INFO: HTTPS 모드 (nginx/nginx.conf)"
+else
+  export NGINX_CONF=./nginx/nginx.http.conf
+  echo "WARN: 인증서 없음 — HTTP 모드로 실행"
 fi
 
 echo "==> Docker 이미지 빌드 및 실행"

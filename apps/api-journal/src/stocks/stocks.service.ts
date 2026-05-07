@@ -77,18 +77,41 @@ export class StocksService {
   async ensureExists(ticker: string, em?: EntityManager): Promise<StockEntity> {
     const repo = em ? em.getRepository(StockEntity) : this.stockRepo;
     const existing = await repo.findOne({ where: { ticker } });
-    if (existing) return existing;
+    if (existing) {
+      // 이름이 티커와 동일하면(최초 등록 시 임시값) Yahoo에서 실제 이름 갱신 시도
+      if (existing.name === ticker) {
+        const isKorean = /^\d{6}$/.test(ticker);
+        const meta = await this.fetchYahooMeta(ticker, isKorean ? existing.market : Market.NASDAQ);
+        if (meta?.shortName) {
+          existing.name = meta.shortName;
+          await repo.save(existing);
+          await this.cache.del(`stocks:ticker:${ticker}`);
+        }
+      }
+      return existing;
+    }
 
     // 한국 종목 여부 판별: 6자리 숫자 티커
     const isKorean = /^\d{6}$/.test(ticker);
     let market = Market.KOSPI;
+    let name = ticker;
 
     if (isKorean) {
       const meta = await this.fetchYahooMeta(ticker, Market.KOSPI);
       if (meta?.exchangeName === 'KOE') market = Market.KOSDAQ;
+      if (meta?.shortName) name = meta.shortName;
+    } else {
+      // 해외 종목: 티커 그대로 Yahoo Finance 조회 (접미사 없음)
+      const meta = await this.fetchYahooMeta(ticker, Market.NASDAQ);
+      if (meta?.shortName) name = meta.shortName;
+      if (meta?.exchangeName === 'NYQ' || meta?.exchangeName === 'NYSE') {
+        market = Market.NYSE;
+      } else {
+        market = Market.NASDAQ;
+      }
     }
 
-    const stock = repo.create({ ticker, name: ticker, market, sector: null });
+    const stock = repo.create({ ticker, name, market, sector: null });
     return repo.save(stock);
   }
 

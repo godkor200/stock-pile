@@ -129,11 +129,22 @@ export class TradesService {
     userId: string,
     buffer: Buffer,
   ): Promise<{ imported: number; errors: string[] }> {
-    // EUC-KR 감지: 0x80 이상 바이트가 있으면 EUC-KR로 디코딩 시도
-    const hasHighBytes = buffer.some((b) => b > 0x7f);
-    const text = hasHighBytes
-      ? iconv.decode(buffer, 'euc-kr')
-      : buffer.toString('utf-8');
+    // UTF-8 BOM 제거 후 유효성 검사 → 실패 시 EUC-KR로 폴백
+    const noBom = buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf
+      ? buffer.slice(3)
+      : buffer;
+    let text: string;
+    try {
+      const decoded = noBom.toString('utf-8');
+      // 유효한 UTF-8인지 재인코딩으로 검증
+      if (Buffer.from(decoded, 'utf-8').equals(noBom)) {
+        text = decoded;
+      } else {
+        text = iconv.decode(noBom, 'euc-kr');
+      }
+    } catch {
+      text = iconv.decode(noBom, 'euc-kr');
+    }
 
     const { data, errors: parseErrors } = Papa.parse<Record<string, string>>(text.trim(), {
       header: true,

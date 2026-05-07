@@ -74,7 +74,7 @@ export default function ReportsPage() {
 
       {/* 리포트 생성 */}
       <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
-        <p className="text-sm text-gray-500 mb-3">티커를 입력하면 재무·뉴스·기술지표를 분석합니다.</p>
+        <p className="text-sm text-gray-500 mb-3">티커 또는 종목명을 입력하면 재무·뉴스·기술지표를 분석합니다.</p>
         <div className="flex gap-2">
           <input
             type="text"

@@ -118,10 +118,10 @@ services:
       - api-report
 
   nginx:
-    image: nginx:alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     restart: always
-    volumes:
-      - ./nginx/nginx.coolify.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - web
       - api-journal

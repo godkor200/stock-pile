@@ -8,8 +8,9 @@ async function proxy(req: NextRequest, path: string): Promise<NextResponse> {
 
   const headers = new Headers();
   req.headers.forEach((value, key) => {
-    if (!['host', 'connection'].includes(key)) headers.set(key, value);
+    if (!['host', 'connection', 'accept-encoding'].includes(key)) headers.set(key, value);
   });
+  headers.set('accept-encoding', 'identity');
 
   const body =
     req.method === 'GET' || req.method === 'HEAD' ? undefined : await req.text();
@@ -20,10 +21,14 @@ async function proxy(req: NextRequest, path: string): Promise<NextResponse> {
     body: body as BodyInit,
   });
 
+  const resHeaders = new Headers(upstream.headers);
+  resHeaders.delete('content-encoding');
+  resHeaders.delete('content-length');
+
   const resBody = await upstream.arrayBuffer();
   return new NextResponse(resBody, {
     status: upstream.status,
-    headers: upstream.headers,
+    headers: resHeaders,
   });
 }
 

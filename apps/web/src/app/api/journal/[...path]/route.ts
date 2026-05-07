@@ -1,0 +1,60 @@
+import { type NextRequest, NextResponse } from 'next/server';
+
+const JOURNAL_URL = process.env.JOURNAL_URL ?? 'http://localhost:3001/api';
+
+async function proxy(req: NextRequest, path: string): Promise<NextResponse> {
+  const search = req.nextUrl.search;
+  const target = `${JOURNAL_URL}/${path}${search}`;
+
+  const headers = new Headers();
+  req.headers.forEach((value, key) => {
+    if (!['host', 'connection'].includes(key)) headers.set(key, value);
+  });
+
+  const isFormData = req.headers.get('content-type')?.includes('multipart/form-data');
+  const body =
+    req.method === 'GET' || req.method === 'HEAD'
+      ? undefined
+      : isFormData
+        ? await req.formData()
+        : await req.text();
+
+  const upstream = await fetch(target, {
+    method: req.method,
+    headers,
+    body: body as BodyInit,
+  });
+
+  const resBody = await upstream.arrayBuffer();
+  return new NextResponse(resBody, {
+    status: upstream.status,
+    headers: upstream.headers,
+  });
+}
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  return proxy(req, path.join('/'));
+}
+export async function POST(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  return proxy(req, path.join('/'));
+}
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  return proxy(req, path.join('/'));
+}
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> },
+) {
+  const { path } = await params;
+  return proxy(req, path.join('/'));
+}
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> },
+) {
+  const { path } = await params;
+  return proxy(req, path.join('/'));
+}

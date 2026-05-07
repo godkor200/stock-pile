@@ -1,6 +1,5 @@
-// 로컬: http://localhost:3001/api  |  프로덕션: /api/journal (Nginx rewrite → /api/*)
-const JOURNAL = process.env.NEXT_PUBLIC_JOURNAL_URL ?? 'http://localhost:3001/api';
-const REPORT = process.env.NEXT_PUBLIC_REPORT_URL ?? 'http://localhost:3002/api';
+const JOURNAL = '/api/journal';
+const REPORT = '/api/report';
 
 export function getUserId(): string {
   if (typeof window === 'undefined') return '';

@@ -3,8 +3,10 @@ import { TradesService } from './trades.service';
 import { TradesRepository } from './trades.repository';
 import { PositionsService } from '../positions/positions.service';
 import { StocksService } from '../stocks/stocks.service';
+import { RedisCacheService } from '../common/redis-cache.service';
 import { TradeEntity } from '@stock-pile/db-schema';
 import { PositionEntity } from '@stock-pile/db-schema';
+import { StockEntity } from '@stock-pile/db-schema';
 import { TradeSide, TradeSource } from '@stock-pile/shared-types';
 import { InsufficientQuantityError } from './errors/insufficient-quantity.error';
 import { CreateTradeDto } from './dto/create-trade.dto';
@@ -63,6 +65,11 @@ function makeSellDto(overrides: Partial<CreateTradeDto> = {}): CreateTradeDto {
   } as CreateTradeDto;
 }
 
+// private 메서드 접근용 타입
+type TradesServicePrivate = {
+  createTrade(userId: string, dto: CreateTradeDto): Promise<TradeEntity>;
+};
+
 // ---------- test suite ----------
 describe('TradesService', () => {
   let service: TradesService;
@@ -76,10 +83,10 @@ describe('TradesService', () => {
   let tradeIdCounter: number;
 
   // EntityManager mock
-  let mockEm: any;
-  let mockPositionRepo: any;
-  let mockTradeRepo: any;
-  let mockStockRepo: any;
+  let mockEm: { getRepository: jest.Mock };
+  let mockPositionRepo: { findOne: jest.Mock; create: jest.Mock; save: jest.Mock };
+  let mockTradeRepo: { create: jest.Mock; save: jest.Mock };
+  let mockStockRepo: { findOne: jest.Mock; create: jest.Mock; save: jest.Mock };
 
   beforeEach(async () => {
     positionStore = null;
@@ -87,7 +94,7 @@ describe('TradesService', () => {
 
     // position repo mock
     mockPositionRepo = {
-      findOne: jest.fn(async ({ where }: any) => {
+      findOne: jest.fn(async ({ where }: { where: { userId: string; ticker: string } }) => {
         if (
           positionStore &&
           positionStore.userId === where.userId &&
@@ -104,7 +111,7 @@ describe('TradesService', () => {
         positionStore = { ...entity };
         return positionStore;
       }),
-    } as any;
+    };
 
     // trade repo mock
     mockTradeRepo = {
@@ -113,7 +120,7 @@ describe('TradesService', () => {
         tradeIdCounter++;
         return { ...entity, id: `trade-uuid-${tradeIdCounter}` };
       }),
-    } as any;
+    };
 
     // stock repo mock
     mockStockRepo = {
@@ -124,21 +131,21 @@ describe('TradesService', () => {
       })),
       create: jest.fn(),
       save: jest.fn(),
-    } as any;
+    };
 
     mockEm = {
-      getRepository: jest.fn((entity: any) => {
+      getRepository: jest.fn((entity: unknown) => {
         if (entity === PositionEntity) return mockPositionRepo;
         if (entity === TradeEntity) return mockTradeRepo;
         return mockStockRepo;
       }),
-    } as any;
+    };
 
     // DataSource mock — transaction calls the callback with mockEm
     dataSource = {
       transaction: jest.fn(
-        async (cb: (em: EntityManager) => Promise<any>) =>
-          cb(mockEm as EntityManager),
+        async (cb: (em: EntityManager) => Promise<unknown>) =>
+          cb(mockEm as unknown as EntityManager),
       ),
       createQueryBuilder: jest.fn(),
     } as unknown as DataSource;
@@ -157,13 +164,17 @@ describe('TradesService', () => {
 
     // Real PositionsService backed by mock repo
     positionsService = new PositionsService(
-      mockPositionRepo as Repository<PositionEntity>,
+      mockPositionRepo as unknown as Repository<PositionEntity>,
     );
 
     // Real StocksService backed by mock stock repo
-    const noopCache = { get: jest.fn().mockResolvedValue(null), set: jest.fn(), del: jest.fn() } as any;
+    const noopCache = {
+      get: jest.fn().mockResolvedValue(null),
+      set: jest.fn(),
+      del: jest.fn(),
+    } as unknown as RedisCacheService;
     stocksService = new StocksService(
-      mockStockRepo as Repository<any>,
+      mockStockRepo as unknown as Repository<StockEntity>,
       noopCache,
     );
 
@@ -179,7 +190,7 @@ describe('TradesService', () => {
   // 1. BUY → position 생성, 평균가 계산
   // ----------------------------------------------------------------
   it('BUY → 포지션 생성 및 평균가 설정', async () => {
-    await (service as any).createTrade('user-1', makeBuyDto());
+    await (service as unknown as TradesServicePrivate).createTrade('user-1', makeBuyDto());
 
     expect(positionStore).not.toBeNull();
     expect(positionStore!.quantity).toBe(10);
@@ -191,9 +202,9 @@ describe('TradesService', () => {
   // ----------------------------------------------------------------
   it('추가 BUY → 가중평균가 갱신', async () => {
     // 1차 BUY: 10주 @70000
-    await (service as any).createTrade('user-1', makeBuyDto());
+    await (service as unknown as TradesServicePrivate).createTrade('user-1', makeBuyDto());
     // 2차 BUY: 10주 @80000
-    await (service as any).createTrade(
+    await (service as unknown as TradesServicePrivate).createTrade(
       'user-1',
       makeBuyDto({ quantity: 10, price: 80000 }),
     );
@@ -207,8 +218,8 @@ describe('TradesService', () => {
   // 3. 부분 SELL → quantity 감소, realized_pnl 누적
   // ----------------------------------------------------------------
   it('부분 SELL → quantity 감소 및 realized_pnl 누적', async () => {
-    await (service as any).createTrade('user-1', makeBuyDto()); // 10주 @70000
-    await (service as any).createTrade(
+    await (service as unknown as TradesServicePrivate).createTrade('user-1', makeBuyDto()); // 10주 @70000
+    await (service as unknown as TradesServicePrivate).createTrade(
       'user-1',
       makeSellDto({ quantity: 5, price: 75000 }),
     );
@@ -222,8 +233,8 @@ describe('TradesService', () => {
   // 4. 전량 SELL → quantity = 0
   // ----------------------------------------------------------------
   it('전량 SELL → quantity = 0', async () => {
-    await (service as any).createTrade('user-1', makeBuyDto()); // 10주
-    await (service as any).createTrade(
+    await (service as unknown as TradesServicePrivate).createTrade('user-1', makeBuyDto()); // 10주
+    await (service as unknown as TradesServicePrivate).createTrade(
       'user-1',
       makeSellDto({ quantity: 10, price: 72000 }),
     );
@@ -238,7 +249,7 @@ describe('TradesService', () => {
   // ----------------------------------------------------------------
   it('보유 없는 상태에서 SELL → InsufficientQuantityError', async () => {
     await expect(
-      (service as any).createTrade('user-1', makeSellDto()),
+      (service as unknown as TradesServicePrivate).createTrade('user-1', makeSellDto()),
     ).rejects.toBeInstanceOf(InsufficientQuantityError);
   });
 

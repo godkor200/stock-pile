@@ -10,7 +10,8 @@
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/data-source.ts",
-    "seed:stocks": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/seeds/stocks.seed.ts"
+    "seed:stocks": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/seeds/stocks.seed.ts",
+    "seed:demo": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/seeds/demo.seed.ts"
   },
   "dependencies": {
     "@stock-pile/shared-types": "workspace:*",

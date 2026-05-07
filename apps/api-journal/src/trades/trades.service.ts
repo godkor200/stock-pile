@@ -13,6 +13,24 @@ import { PaginatedResponse } from '@stock-pile/shared-types';
 import * as Papa from 'papaparse';
 import * as iconv from 'iconv-lite';
 
+function isValidUtf8(buf: Buffer): boolean {
+  let i = 0;
+  while (i < buf.length) {
+    const b = buf[i];
+    let follow = 0;
+    if (b <= 0x7f) { follow = 0; }
+    else if ((b & 0xe0) === 0xc0) { follow = 1; }
+    else if ((b & 0xf0) === 0xe0) { follow = 2; }
+    else if ((b & 0xf8) === 0xf0) { follow = 3; }
+    else { return false; }
+    for (let j = 1; j <= follow; j++) {
+      if (i + j >= buf.length || (buf[i + j] & 0xc0) !== 0x80) return false;
+    }
+    i += 1 + follow;
+  }
+  return true;
+}
+
 const SIDE_MAP: Record<string, TradeSide> = {
   매수: TradeSide.BUY, buy: TradeSide.BUY, BUY: TradeSide.BUY,
   매도: TradeSide.SELL, sell: TradeSide.SELL, SELL: TradeSide.SELL,
@@ -129,22 +147,13 @@ export class TradesService {
     userId: string,
     buffer: Buffer,
   ): Promise<{ imported: number; errors: string[] }> {
-    // UTF-8 BOM 제거 후 유효성 검사 → 실패 시 EUC-KR로 폴백
+    // UTF-8 BOM 제거
     const noBom = buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf
       ? buffer.slice(3)
       : buffer;
-    let text: string;
-    try {
-      const decoded = noBom.toString('utf-8');
-      // 유효한 UTF-8인지 재인코딩으로 검증
-      if (Buffer.from(decoded, 'utf-8').equals(noBom)) {
-        text = decoded;
-      } else {
-        text = iconv.decode(noBom, 'euc-kr');
-      }
-    } catch {
-      text = iconv.decode(noBom, 'euc-kr');
-    }
+    const text = isValidUtf8(noBom)
+      ? noBom.toString('utf-8')
+      : iconv.decode(noBom, 'euc-kr');
 
     const { data, errors: parseErrors } = Papa.parse<Record<string, string>>(text.trim(), {
       header: true,

@@ -13,8 +13,11 @@ echo "==> SSL 인증서 확인"
 if [ ! -f nginx/certs/fullchain.pem ]; then
   echo "INFO: SSL 인증서 없음 — Let's Encrypt로 발급합니다."
   mkdir -p nginx/certs
-  # certbot standalone으로 발급 (80 포트가 비어 있어야 함)
-  DOMAIN=$(grep DOMAIN .env.prod | cut -d= -f2)
+
+  # nginx가 80 포트를 점유 중이면 certbot standalone이 실패하므로 일시 중지
+  docker compose -f docker-compose.prod.yml stop nginx 2>/dev/null || true
+
+  DOMAIN=$(grep '^DOMAIN=' .env.prod | cut -d= -f2)
   sudo certbot certonly --standalone -d "$DOMAIN" --non-interactive --agree-tos -m godkor200@gmail.com
   sudo cp /etc/letsencrypt/live/"$DOMAIN"/fullchain.pem nginx/certs/
   sudo cp /etc/letsencrypt/live/"$DOMAIN"/privkey.pem nginx/certs/

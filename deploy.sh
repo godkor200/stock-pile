@@ -36,4 +36,7 @@ fi
 echo "==> Docker 이미지 빌드 및 실행"
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 
+echo "==> nginx 재시작 (upstream IP 갱신)"
+docker compose -f docker-compose.prod.yml --env-file .env.prod restart nginx
+
 echo "==> 완료. 로그 확인: docker compose -f docker-compose.prod.yml logs -f"

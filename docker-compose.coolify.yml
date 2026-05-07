@@ -103,27 +103,12 @@ services:
       migrate:
         condition: service_completed_successfully
 
-  web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-      args:
-        NEXT_PUBLIC_JOURNAL_URL: ${NEXT_PUBLIC_JOURNAL_URL}
-        NEXT_PUBLIC_REPORT_URL: ${NEXT_PUBLIC_REPORT_URL}
-    restart: always
-    environment:
-      PORT: 3005
-    depends_on:
-      - api-journal
-      - api-report
-
   nginx:
     build:
       context: ./nginx
       dockerfile: Dockerfile
     restart: always
     depends_on:
-      - web
       - api-journal
       - api-report
 

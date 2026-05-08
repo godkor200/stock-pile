@@ -9,8 +9,8 @@ const config: Config = {
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
   moduleNameMapper: {
-    '^@stock-pile/shared-types(.*)$': '<rootDir>/../../packages/shared-types/src$1',
-    '^@stock-pile/db-schema(.*)$': '<rootDir>/../../packages/db-schema/src$1',
+    '^@stock-pile/shared-types(.*)$': '<rootDir>/../../../packages/shared-types/src$1',
+    '^@stock-pile/db-schema(.*)$': '<rootDir>/../../../packages/db-schema/src$1',
   },
 };
 

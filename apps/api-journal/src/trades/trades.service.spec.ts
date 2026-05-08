@@ -272,4 +272,89 @@ describe('TradesService', () => {
     // affected=0 이므로 다른 유저 trade 변경 없음
     expect(result.affected).toBe(0);
   });
+
+  // ----------------------------------------------------------------
+  // 7. importFromCsv — UTF-8 인코딩 정상 파싱
+  // ----------------------------------------------------------------
+  describe('importFromCsv', () => {
+    it('UTF-8 CSV를 파싱하여 한글 reason을 올바르게 저장한다', async () => {
+      const csv = [
+        'ticker,side,quantity,price,tradedAt,reason,emotion',
+        '005930,BUY,10,70000,2026-01-01,반도체 저점 매수,PLANNED',
+      ].join('\n');
+      const buffer = Buffer.from(csv, 'utf-8');
+
+      // stocksService.ensureExists mock
+      (stocksService as unknown as { ensureExists: jest.Mock }).ensureExists =
+        jest.fn().mockResolvedValue(undefined);
+
+      const result = await service.importFromCsv('user-1', buffer);
+
+      expect(result.imported).toBe(1);
+      expect(result.errors).toHaveLength(0);
+
+      const savedTrade = (mockTradeRepo.save as jest.Mock).mock.calls[0][0] as TradeEntity;
+      expect(savedTrade.reason).toBe('반도체 저점 매수');
+      expect(savedTrade.ticker).toBe('005930');
+      expect(savedTrade.quantity).toBe(10);
+    });
+
+    it('UTF-8 BOM이 있는 CSV도 정상 파싱한다', async () => {
+      const csv = 'ticker,side,quantity,price,tradedAt\n005930,BUY,5,68000,2026-02-01';
+      const bom = Buffer.from([0xef, 0xbb, 0xbf]);
+      const buffer = Buffer.concat([bom, Buffer.from(csv, 'utf-8')]);
+
+      (stocksService as unknown as { ensureExists: jest.Mock }).ensureExists =
+        jest.fn().mockResolvedValue(undefined);
+
+      const result = await service.importFromCsv('user-1', buffer);
+
+      expect(result.imported).toBe(1);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('side 값이 잘못되면 해당 행은 errors에 포함된다', async () => {
+      const csv = [
+        'ticker,side,quantity,price,tradedAt',
+        '005930,INVALID,10,70000,2026-01-01',
+      ].join('\n');
+      const buffer = Buffer.from(csv, 'utf-8');
+
+      const result = await service.importFromCsv('user-1', buffer);
+
+      expect(result.imported).toBe(0);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]).toContain('side 값 오류');
+    });
+
+    it('tradedAt 형식이 잘못되면 해당 행은 errors에 포함된다', async () => {
+      const csv = [
+        'ticker,side,quantity,price,tradedAt',
+        '005930,BUY,10,70000,not-a-date',
+      ].join('\n');
+      const buffer = Buffer.from(csv, 'utf-8');
+
+      const result = await service.importFromCsv('user-1', buffer);
+
+      expect(result.imported).toBe(0);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]).toContain('tradedAt 오류');
+    });
+
+    it('한글 side 값(매수/매도)도 인식한다', async () => {
+      const csv = [
+        'ticker,side,quantity,price,tradedAt',
+        '005930,매수,10,70000,2026-01-01',
+      ].join('\n');
+      const buffer = Buffer.from(csv, 'utf-8');
+
+      (stocksService as unknown as { ensureExists: jest.Mock }).ensureExists =
+        jest.fn().mockResolvedValue(undefined);
+
+      const result = await service.importFromCsv('user-1', buffer);
+
+      expect(result.imported).toBe(1);
+      expect(result.errors).toHaveLength(0);
+    });
+  });
 });

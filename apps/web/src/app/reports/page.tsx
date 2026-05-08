@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { generateReport, getReports } from '@/lib/api';
+import { generateReport, getReports, getReportHistory } from '@/lib/api';
 
 interface ReportAnalysis {
   summary: string;
@@ -35,6 +35,8 @@ export default function ReportsPage() {
   const [ticker, setTicker] = useState('');
   const [selected, setSelected] = useState<Report | null>(null);
   const [error, setError] = useState('');
+  const [history, setHistory] = useState<Report[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     getReports()
@@ -149,9 +151,45 @@ export default function ReportsPage() {
             ) : (
               <p className="text-gray-600 text-sm">{selected.claudeAnalysis}</p>
             )}
-            <p className="mt-4 text-xs text-gray-400">
-              {new Date(selected.generatedAt).toLocaleString('ko-KR')} 생성
-            </p>
+            <div className="mt-4 flex items-center justify-between">
+              <p className="text-xs text-gray-400">
+                {new Date(selected.generatedAt).toLocaleString('ko-KR')} 생성
+              </p>
+              <button
+                onClick={async () => {
+                  if (!showHistory) {
+                    const h = (await getReportHistory(selected.ticker)) as Report[];
+                    setHistory(h);
+                  }
+                  setShowHistory((v) => !v);
+                }}
+                className="text-xs text-blue-500 hover:text-blue-700"
+              >
+                {showHistory ? '이력 닫기' : '분석 이력 보기'}
+              </button>
+            </div>
+
+            {showHistory && history.length > 0 && (
+              <div className="mt-3 border-t border-gray-100 pt-3 space-y-2">
+                <p className="text-xs font-medium text-gray-500 mb-2">분석 이력</p>
+                {history.map((h) => (
+                  <div key={h.id} className="flex items-center justify-between text-xs py-1.5 border-b border-gray-50">
+                    <span className="text-gray-500">{new Date(h.generatedAt).toLocaleString('ko-KR')}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded-full font-bold ${VERDICT_STYLE[h.verdict] ?? ''}`}>
+                        {h.verdict}
+                      </span>
+                      <button
+                        onClick={() => { setSelected(h); setShowHistory(false); }}
+                        className="text-gray-400 hover:text-blue-500"
+                      >
+                        보기
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       })()}

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Post, Query, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post, Query, UnauthorizedException } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
@@ -19,12 +19,22 @@ export class ReportsController {
   }
 
   @Get()
-  @ApiOperation({ summary: '내 리포트 목록 조회' })
+  @ApiOperation({ summary: '내 리포트 목록 조회 (종목별 최신 1개)' })
   async findAll(
     @Headers('x-user-id') userId: string,
     @Query('ticker') ticker?: string,
   ) {
     if (!userId) throw new UnauthorizedException();
     return this.reports.findByUser(userId, ticker?.toUpperCase());
+  }
+
+  @Get(':ticker/history')
+  @ApiOperation({ summary: '종목별 분석 이력 조회' })
+  async findHistory(
+    @Param('ticker') ticker: string,
+    @Headers('x-user-id') userId: string,
+  ) {
+    if (!userId) throw new UnauthorizedException();
+    return this.reports.findHistory(userId, ticker.toUpperCase());
   }
 }

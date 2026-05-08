@@ -138,6 +138,15 @@ export class ReportsService {
     return [...latest.values()];
   }
 
+  async findHistory(userId: string, ticker: string): Promise<AnalysisReportEntity[]> {
+    return this.reportRepo.find({
+      where: { userId, ticker },
+      relations: ['stock'],
+      order: { generatedAt: 'DESC' },
+      take: 20,
+    });
+  }
+
   private async findCached(userId: string, ticker: string): Promise<AnalysisReportEntity | null> {
     const cutoff = new Date(Date.now() - CACHE_TTL_HOURS * 60 * 60 * 1000);
     return this.reportRepo

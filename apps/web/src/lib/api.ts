@@ -132,3 +132,7 @@ export function getReports(ticker?: string) {
   const qs = ticker ? `?ticker=${ticker}` : '';
   return request(`${REPORT}/reports${qs}`);
 }
+
+export function getReportHistory(ticker: string) {
+  return request(`${REPORT}/reports/${ticker}/history`);
+}

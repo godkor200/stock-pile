@@ -37,24 +37,49 @@ interface Message {
   advisedTicker?: string;
 }
 
+const INITIAL_MESSAGE: Message = {
+  role: 'assistant',
+  content: '안녕하세요! 매매 기록을 남기거나 투자 질문을 해주세요.\n예) "삼성전자 10주 70000원에 매수" / "지금 삼성전자 사도 돼?"',
+};
+const STORAGE_KEY = 'sp_chat_history';
+const MAX_STORED = 100;
+
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: '안녕하세요! 매매 기록을 남기거나 투자 질문을 해주세요.\n예) "삼성전자 10주 70000원에 매수" / "지금 삼성전자 사도 돼?"',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed: Message[] = JSON.parse(saved);
+        if (parsed.length > 0) setMessages(parsed);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   function addMessage(msg: Message) {
-    setMessages((prev) => [...prev, msg]);
+    setMessages((prev) => {
+      const next = [...prev, msg];
+      try {
+        // response 필드 제외하고 저장 (인터랙티브 버튼은 새 세션에서 무의미)
+        const toStore = next.slice(-MAX_STORED).map(({ role, content, advisedTicker }) => ({
+          role, content, ...(advisedTicker ? { advisedTicker } : {}),
+        }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
+      } catch { /* ignore */ }
+      return next;
+    });
   }
 
   async function handleSend() {

@@ -125,12 +125,17 @@ export class ReportsService {
 
   async findByUser(userId: string, ticker?: string): Promise<AnalysisReportEntity[]> {
     const where = ticker ? { userId, ticker } : { userId };
-    return this.reportRepo.find({
+    const all = await this.reportRepo.find({
       where,
       relations: ['stock'],
       order: { generatedAt: 'DESC' },
-      take: 20,
     });
+    // 종목별 최신 리포트만 반환
+    const latest = new Map<string, AnalysisReportEntity>();
+    for (const r of all) {
+      if (!latest.has(r.ticker)) latest.set(r.ticker, r);
+    }
+    return [...latest.values()];
   }
 
   private async findCached(userId: string, ticker: string): Promise<AnalysisReportEntity | null> {

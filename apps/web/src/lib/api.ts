@@ -86,8 +86,22 @@ export function confirmChat(sessionId: string) {
 }
 
 // ── trades ────────────────────────────────────────────────
-export function getTrades(params?: { ticker?: string; page?: number }) {
-  const qs = new URLSearchParams(params as Record<string, string>).toString();
+export interface TradeFilter {
+  ticker?: string;
+  side?: 'BUY' | 'SELL';
+  from?: string;
+  to?: string;
+  sort?: string;
+  order?: 'ASC' | 'DESC';
+  page?: number;
+  limit?: number;
+}
+
+export function getTrades(params?: TradeFilter) {
+  const clean = Object.fromEntries(
+    Object.entries(params ?? {}).filter(([, v]) => v !== undefined && v !== ''),
+  );
+  const qs = new URLSearchParams(clean as Record<string, string>).toString();
   return request(`${JOURNAL}/trades${qs ? `?${qs}` : ''}`);
 }
 

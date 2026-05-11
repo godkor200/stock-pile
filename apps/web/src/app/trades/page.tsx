@@ -90,7 +90,7 @@ export default function TradesPage() {
 
       {/* 필터 바 */}
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2 items-center">
           <input
             type="text"
             placeholder="종목명 / 티커"
@@ -192,10 +192,10 @@ export default function TradesPage() {
           <p>조건에 맞는 거래 내역이 없습니다.</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+          <table className="w-full text-sm min-w-[700px]">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50 text-gray-500 text-xs">
+              <tr className="border-b border-gray-100 bg-gray-50 text-gray-500 text-xs whitespace-nowrap">
                 <th className="px-4 py-3 text-left font-medium">날짜</th>
                 <th className="px-4 py-3 text-left font-medium">종목</th>
                 <th className="px-4 py-3 text-center font-medium">구분</th>
@@ -208,7 +208,7 @@ export default function TradesPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {result.data.map((t) => (
-                <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={t.id} className="hover:bg-gray-50 transition-colors whitespace-nowrap">
                   <td className="px-4 py-3 text-gray-400 whitespace-nowrap">
                     {new Date(t.tradedAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
                   </td>

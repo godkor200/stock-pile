@@ -50,6 +50,10 @@ export class ChatController {
     }
 
     const parsed = await this.chatInput.parse(dto.message);
+    // classify 단계에서 추출한 ticker를 parse 결과에 병합 (parse가 못 잡은 경우 보완)
+    if (mentionedTicker && !parsed.ticker) {
+      parsed.ticker = mentionedTicker;
+    }
     const session = await this.chatSession.create(userId, parsed);
 
     const candidates = parsed.stockQuery

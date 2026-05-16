@@ -39,18 +39,36 @@ export class ChatController {
     await this.users.findOrCreate(userId);
 
     // 1단계: 의도 분류 + 종목 추출 — 투자 질문이면 어드바이저로 라우팅
-    const { intent, ticker: mentionedTicker } = await this.advisor.classify(
-      dto.message,
-      dto.history,
-    );
+    const {
+      intent,
+      ticker: llmTicker,
+      stockQuery: mentionedStockQuery,
+    } = await this.advisor.classify(dto.message, dto.history);
+
     if (intent === 'INVESTMENT_QUERY') {
-      const message = await this.advisor.advise(userId, dto.message, mentionedTicker, dto.history);
+      // DB로 ticker 검증: stockQuery로 검색해 정확한 ticker를 확보한다.
+      // LLM이 hallucination한 ticker 대신 DB 결과를 우선 사용한다.
+      let resolvedTicker = llmTicker;
+      if (mentionedStockQuery) {
+        const candidates = await this.stocks.search(mentionedStockQuery);
+        if (candidates.length > 0) {
+          resolvedTicker = candidates[0].ticker;
+        } else if (llmTicker) {
+          // DB에 없으면 LLM ticker 유지 (자동 등록 후 advise에서 가격 조회)
+          await this.stocks.ensureExists(llmTicker);
+        }
+      }
+
+      const message = await this.advisor.advise(userId, dto.message, resolvedTicker, dto.history);
       return {
         status: 'CHAT_RESPONSE',
         message,
-        ...(mentionedTicker ? { advisedTicker: mentionedTicker } : {}),
+        ...(resolvedTicker ? { advisedTicker: resolvedTicker } : {}),
       };
     }
+
+    // TRADE_ENTRY 경로에서도 LLM ticker 병합 시 검증된 ticker 사용
+    const mentionedTicker = llmTicker;
 
     const parsed = await this.chatInput.parse(dto.message);
     // classify 단계에서 추출한 ticker를 parse 결과에 병합 (parse가 못 잡은 경우 보완)

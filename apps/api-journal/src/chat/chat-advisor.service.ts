@@ -36,15 +36,14 @@ export class ChatAdvisorService {
   }
 
   /**
-   * 사용자 메시지의 의도와 언급 종목 ticker를 분류한다.
+   * 사용자 메시지의 의도와 언급 종목 ticker/stockQuery를 분류한다.
    * history가 있으면 직전 대화 맥락을 포함해 분류 정확도를 높인다.
    */
   async classify(
     message: string,
     history?: ChatHistoryItem[],
-  ): Promise<{ intent: ChatIntent; ticker: string | null }> {
+  ): Promise<{ intent: ChatIntent; ticker: string | null; stockQuery: string | null }> {
     try {
-      // 직전 대화 이력을 system prompt에 주입해 "시장가격 말하는거야" 같은 맥락 추적
       const contextPrefix =
         history && history.length > 0
           ? `[이전 대화]\n${history
@@ -55,16 +54,21 @@ export class ChatAdvisorService {
 
       const text = await this.callGroq(CLASSIFY_INTENT_SYSTEM, `${contextPrefix}${message}`);
       const match = text.match(/\{[\s\S]*\}/);
-      if (!match) return { intent: 'TRADE_ENTRY', ticker: null };
+      if (!match) return { intent: 'TRADE_ENTRY', ticker: null, stockQuery: null };
 
-      const parsed = JSON.parse(match[0]) as { intent?: string; ticker?: string | null };
+      const parsed = JSON.parse(match[0]) as {
+        intent?: string;
+        ticker?: string | null;
+        stockQuery?: string | null;
+      };
       return {
         intent: parsed.intent === 'INVESTMENT_QUERY' ? 'INVESTMENT_QUERY' : 'TRADE_ENTRY',
         ticker: parsed.ticker ?? null,
+        stockQuery: parsed.stockQuery ?? null,
       };
     } catch (err) {
       this.logger.warn(`의도 분류 실패, TRADE_ENTRY로 폴백: ${(err as Error).message}`);
-      return { intent: 'TRADE_ENTRY', ticker: null };
+      return { intent: 'TRADE_ENTRY', ticker: null, stockQuery: null };
     }
   }
 

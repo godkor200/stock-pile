@@ -35,41 +35,6 @@ function mockGroqRawText(text: string) {
 
 // ── 서비스 팩토리 ───────────────────────────────────────────────────────────
 
-async function buildService(): Promise<ChatAdvisorService> {
-  const module = await Test.createTestingModule({
-    providers: [
-      ChatAdvisorService,
-      {
-        provide: ConfigService,
-        useValue: {
-          get: (key: string, def?: unknown) => {
-            const cfg: Record<string, string> = {
-              GROQ_MODEL: 'llama-3.1-8b-instant',
-              GROQ_API_KEY: 'test-key',
-              ANTHROPIC_API_KEY: '',
-            };
-            return cfg[key] ?? def;
-          },
-        },
-      },
-      // ChatAdvisorService 의존성 mock (classify만 테스트하므로 stub)
-      { provide: 'PositionsService', useValue: {} },
-      { provide: 'TradesService', useValue: {} },
-      { provide: 'StocksService', useValue: {} },
-      { provide: 'ReportClientService', useValue: {} },
-    ],
-  })
-    .overrideProvider('PositionsService').useValue({})
-    .overrideProvider('TradesService').useValue({})
-    .overrideProvider('StocksService').useValue({})
-    .overrideProvider('ReportClientService').useValue({})
-    .compile();
-
-  return module.get(ChatAdvisorService);
-}
-
-// ── 헬퍼 ────────────────────────────────────────────────────────────────────
-
 import { PositionsService } from '../positions/positions.service';
 import { TradesService } from '../trades/trades.service';
 import { StocksService } from '../stocks/stocks.service';

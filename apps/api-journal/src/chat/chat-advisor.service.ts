@@ -7,6 +7,7 @@ import { StocksService } from '../stocks/stocks.service';
 import { ReportClientService } from './report-client.service';
 import { CLASSIFY_INTENT_SYSTEM } from './prompts/classify-intent.prompt';
 import { buildAdvisorSystemPrompt } from './prompts/investment-advisor.prompt';
+import { ChatHistoryItem } from './dto/chat-message.dto';
 
 export type ChatIntent = 'TRADE_ENTRY' | 'INVESTMENT_QUERY';
 
@@ -34,10 +35,25 @@ export class ChatAdvisorService {
     this.anthropic = new Anthropic({ apiKey: anthropicKey });
   }
 
-  /** 사용자 메시지의 의도와 언급 종목 ticker를 분류한다 */
-  async classify(message: string): Promise<{ intent: ChatIntent; ticker: string | null }> {
+  /**
+   * 사용자 메시지의 의도와 언급 종목 ticker를 분류한다.
+   * history가 있으면 직전 대화 맥락을 포함해 분류 정확도를 높인다.
+   */
+  async classify(
+    message: string,
+    history?: ChatHistoryItem[],
+  ): Promise<{ intent: ChatIntent; ticker: string | null }> {
     try {
-      const text = await this.callGroq(CLASSIFY_INTENT_SYSTEM, message);
+      // 직전 대화 이력을 system prompt에 주입해 "시장가격 말하는거야" 같은 맥락 추적
+      const contextPrefix =
+        history && history.length > 0
+          ? `[이전 대화]\n${history
+              .slice(-4)
+              .map((h) => `${h.role === 'user' ? '사용자' : '어시스턴트'}: ${h.content}`)
+              .join('\n')}\n\n[현재 메시지]\n`
+          : '';
+
+      const text = await this.callGroq(CLASSIFY_INTENT_SYSTEM, `${contextPrefix}${message}`);
       const match = text.match(/\{[\s\S]*\}/);
       if (!match) return { intent: 'TRADE_ENTRY', ticker: null };
 
@@ -52,18 +68,38 @@ export class ChatAdvisorService {
     }
   }
 
-  /** 포트폴리오 컨텍스트(현재가 포함)를 로드한 뒤 투자 질문에 답변한다 */
-  async advise(userId: string, question: string, ticker?: string | null): Promise<string> {
-    const [positions, recentTrades, analysis] = await Promise.all([
+  /**
+   * 포트폴리오 컨텍스트(현재가 포함)를 로드한 뒤 투자 질문에 답변한다.
+   * ticker가 지정된 경우 포트폴리오 미보유 종목이라도 현재가를 직접 조회해 포함한다.
+   */
+  async advise(
+    userId: string,
+    question: string,
+    ticker?: string | null,
+    history?: ChatHistoryItem[],
+  ): Promise<string> {
+    const [positions, recentTrades, analysis, queriedPrice] = await Promise.all([
       this.positionsService.findAll(userId),
       this.tradesService.findRecent(userId, 10),
       ticker ? this.reportClient.fetchAnalysis(userId, ticker) : Promise.resolve(null),
+      // 언급된 종목의 현재가를 포트폴리오 보유 여부와 무관하게 조회
+      ticker ? this.stocksService.fetchCurrentPrice(ticker) : Promise.resolve(null),
     ]);
 
     // 보유 종목 현재가를 Yahoo Finance에서 병렬 조회
     const currentPrices = await Promise.all(
       positions.map((p) => this.stocksService.fetchCurrentPrice(p.ticker)),
     );
+
+    // 조회 종목 이름 확인 (DB에 없으면 ticker 그대로)
+    const queriedStockEntity = ticker ? await this.stocksService.findByTicker(ticker) : null;
+    const queriedStock = ticker
+      ? {
+          ticker,
+          name: queriedStockEntity?.name ?? ticker,
+          currentPrice: queriedPrice,
+        }
+      : null;
 
     const systemPrompt = buildAdvisorSystemPrompt(
       {
@@ -87,13 +123,14 @@ export class ChatAdvisorService {
         })),
       },
       analysis,
+      queriedStock,
     );
 
     try {
       if (this.hasAnthropicKey) {
-        return await this.callAnthropic(systemPrompt, question);
+        return await this.callAnthropic(systemPrompt, question, history);
       }
-      return await this.callGroq(systemPrompt, question);
+      return await this.callGroq(systemPrompt, question, history);
     } catch (err) {
       this.logger.error(`투자 조언 LLM 호출 실패: ${(err as Error).message}`);
       throw err;
@@ -102,9 +139,18 @@ export class ChatAdvisorService {
 
   // ── Groq (OpenAI 호환) ──────────────────────────────────────
 
-  private async callGroq(system: string, userMessage: string): Promise<string> {
+  private async callGroq(
+    system: string,
+    userMessage: string,
+    history?: ChatHistoryItem[],
+  ): Promise<string> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
+
+    const historyMessages = (history ?? []).slice(-6).map((h) => ({
+      role: h.role,
+      content: h.content,
+    }));
 
     const res = await fetch(this.groqUrl, {
       method: 'POST',
@@ -118,6 +164,7 @@ export class ChatAdvisorService {
         max_tokens: 512,
         messages: [
           { role: 'system', content: system },
+          ...historyMessages,
           { role: 'user', content: userMessage },
         ],
       }),
@@ -133,12 +180,21 @@ export class ChatAdvisorService {
 
   // ── Anthropic ───────────────────────────────────────────────
 
-  private async callAnthropic(system: string, userMessage: string): Promise<string> {
+  private async callAnthropic(
+    system: string,
+    userMessage: string,
+    history?: ChatHistoryItem[],
+  ): Promise<string> {
+    const historyMessages = (history ?? []).slice(-6).map((h) => ({
+      role: h.role as 'user' | 'assistant',
+      content: h.content,
+    }));
+
     const res = await this.anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 512,
       system,
-      messages: [{ role: 'user', content: userMessage }],
+      messages: [...historyMessages, { role: 'user', content: userMessage }],
     });
 
     this.logger.log(

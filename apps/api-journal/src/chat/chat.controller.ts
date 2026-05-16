@@ -39,9 +39,12 @@ export class ChatController {
     await this.users.findOrCreate(userId);
 
     // 1단계: 의도 분류 + 종목 추출 — 투자 질문이면 어드바이저로 라우팅
-    const { intent, ticker: mentionedTicker } = await this.advisor.classify(dto.message);
+    const { intent, ticker: mentionedTicker } = await this.advisor.classify(
+      dto.message,
+      dto.history,
+    );
     if (intent === 'INVESTMENT_QUERY') {
-      const message = await this.advisor.advise(userId, dto.message, mentionedTicker);
+      const message = await this.advisor.advise(userId, dto.message, mentionedTicker, dto.history);
       return {
         status: 'CHAT_RESPONSE',
         message,

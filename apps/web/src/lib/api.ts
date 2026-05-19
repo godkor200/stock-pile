@@ -150,3 +150,8 @@ export function getReports(ticker?: string) {
 export function getReportHistory(ticker: string) {
   return request(`${REPORT}/reports/${ticker}/history`);
 }
+
+// ── coaching ──────────────────────────────────────────────
+export function getMonthlyCoaching(year: number, month: number) {
+  return request(`${JOURNAL}/coaching/monthly?year=${year}&month=${month}`);
+}

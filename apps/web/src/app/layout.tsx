@@ -15,6 +15,7 @@ const NAV = [
   { href: '/trades', label: '거래 내역' },
   { href: '/positions', label: '포지션' },
   { href: '/reports', label: '종목 분석' },
+  { href: '/coaching', label: '월간 코칭' },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

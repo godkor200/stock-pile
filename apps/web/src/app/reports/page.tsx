@@ -199,7 +199,7 @@ export default function ReportsPage() {
         <p className="text-gray-400">불러오는 중...</p>
       ) : (
         <div className="space-y-2">
-          {reports.map((r) => (
+          {reports.filter((r) => r.id !== selected?.id).map((r) => (
             <button
               key={r.id}
               onClick={() => setSelected(r)}

@@ -199,6 +199,9 @@ export default function ReportsPage() {
         <p className="text-gray-400">불러오는 중...</p>
       ) : (
         <div className="space-y-2">
+          {reports.filter((r) => r.id !== selected?.id).length > 0 && (
+            <p className="text-xs text-gray-400 font-medium px-1 mb-1">이전에 분석한 종목</p>
+          )}
           {reports.filter((r) => r.id !== selected?.id).map((r) => (
             <button
               key={r.id}

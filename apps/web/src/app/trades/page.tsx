@@ -193,59 +193,57 @@ export default function TradesPage() {
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
-          <table className="w-full text-sm min-w-[700px]">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50 text-gray-500 text-xs whitespace-nowrap">
-                <th className="px-4 py-3 text-left font-medium">날짜</th>
-                <th className="px-4 py-3 text-left font-medium">종목</th>
-                <th className="px-4 py-3 text-center font-medium">구분</th>
-                <th className="px-4 py-3 text-right font-medium">수량</th>
-                <th className="px-4 py-3 text-right font-medium">단가</th>
-                <th className="px-4 py-3 text-right font-medium">총액</th>
-                <th className="px-4 py-3 text-center font-medium">감정</th>
-                <th className="px-4 py-3 text-left font-medium w-40">메모</th>
+              <tr className="border-b border-gray-100 bg-gray-50 text-gray-500 text-xs">
+                <th className="px-3 py-3 text-left font-medium">날짜</th>
+                <th className="px-3 py-3 text-left font-medium">종목</th>
+                <th className="px-3 py-3 text-center font-medium">구분</th>
+                <th className="px-3 py-3 text-right font-medium">수량</th>
+                <th className="px-3 py-3 text-right font-medium">단가</th>
+                <th className="px-3 py-3 text-right font-medium">총액</th>
+                <th className="px-3 py-3 text-center font-medium hidden sm:table-cell">감정</th>
+                <th className="px-3 py-3 text-left font-medium hidden md:table-cell">메모</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {result.data.map((t) => (
-                <tr key={t.id} className="hover:bg-gray-50 transition-colors whitespace-nowrap">
-                  <td className="px-4 py-3 text-gray-400 whitespace-nowrap">
-                    {new Date(t.tradedAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
+                <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-3 py-3 text-gray-400 text-xs whitespace-nowrap">
+                    {new Date(t.tradedAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="font-medium text-gray-800">{t.stock?.name ?? t.ticker}</span>
+                  <td className="px-3 py-3 max-w-[100px]">
+                    <span className="font-medium text-gray-800 truncate block">{t.stock?.name ?? t.ticker}</span>
                     {t.stock?.name && t.stock.name !== t.ticker && (
-                      <span className="ml-1.5 text-xs text-gray-400">{t.ticker}</span>
+                      <span className="text-xs text-gray-400">{t.ticker}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <span
-                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        t.side === 'BUY' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
-                      }`}
-                    >
+                  <td className="px-3 py-3 text-center">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                      t.side === 'BUY' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
+                    }`}>
                       {t.side === 'BUY' ? '매수' : '매도'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-700">
+                  <td className="px-3 py-3 text-right text-gray-700 whitespace-nowrap">
                     {t.quantity.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-700">
+                  <td className="px-3 py-3 text-right text-gray-700 whitespace-nowrap">
                     {t.price.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-right font-medium text-gray-800">
+                  <td className="px-3 py-3 text-right font-medium text-gray-800 whitespace-nowrap">
                     {(t.quantity * t.price).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-3 py-3 text-center hidden sm:table-cell">
                     {t.emotion ? (
-                      <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                      <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded whitespace-nowrap">
                         {EMOTION_LABEL[t.emotion] ?? t.emotion}
                       </span>
                     ) : (
                       <span className="text-gray-300">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-400 truncate max-w-[160px]">
+                  <td className="px-3 py-3 text-xs text-gray-400 truncate max-w-[120px] hidden md:table-cell">
                     {t.reason ?? '—'}
                   </td>
                 </tr>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getMonthlyCoaching } from '@/lib/api';
 
 interface CoachingStats {
@@ -41,21 +41,40 @@ export default function CoachingPage() {
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [data, setData] = useState<MonthlyCoaching | null>(null);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
+  const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     load(year, month);
   }, []); // eslint-disable-line
 
+  function startProgress() {
+    setProgress(0);
+    // 30초 동안 0→90%까지 서서히 증가 (LLM 응답 대기)
+    const step = 90 / (30 * 10);
+    progressTimer.current = setInterval(() => {
+      setProgress((p) => Math.min(p + step, 90));
+    }, 100);
+  }
+
+  function finishProgress() {
+    if (progressTimer.current) clearInterval(progressTimer.current);
+    setProgress(100);
+    setTimeout(() => setProgress(0), 600);
+  }
+
   async function load(y: number, m: number) {
     setLoading(true);
     setError('');
+    startProgress();
     try {
       const res = (await getMonthlyCoaching(y, m)) as MonthlyCoaching;
       setData(res);
     } catch (e) {
       setError((e as Error).message);
     } finally {
+      finishProgress();
       setLoading(false);
     }
   }
@@ -92,7 +111,21 @@ export default function CoachingPage() {
         </button>
       </div>
 
-      {loading && <p className="text-gray-400">분석 중...</p>}
+      {/* 프로그레스 바 */}
+      {loading && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm text-gray-500">AI 분석 중...</span>
+            <span className="text-xs text-gray-400">{Math.round(progress)}%</span>
+          </div>
+          <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+            <div
+              className="h-1.5 bg-blue-500 rounded-full transition-all duration-100 ease-linear"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
       {data && !loading && (

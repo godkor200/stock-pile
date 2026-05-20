@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { generateReport, getReports, getReportHistory } from '@/lib/api';
 
 interface ReportAnalysis {
@@ -32,11 +32,27 @@ export default function ReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [ticker, setTicker] = useState('');
   const [selected, setSelected] = useState<Report | null>(null);
   const [error, setError] = useState('');
   const [history, setHistory] = useState<Report[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function startProgress() {
+    setProgress(0);
+    const step = 90 / (30 * 10);
+    progressTimer.current = setInterval(() => {
+      setProgress((p) => Math.min(p + step, 90));
+    }, 100);
+  }
+
+  function finishProgress() {
+    if (progressTimer.current) clearInterval(progressTimer.current);
+    setProgress(100);
+    setTimeout(() => setProgress(0), 600);
+  }
 
   useEffect(() => {
     getReports()
@@ -50,6 +66,7 @@ export default function ReportsPage() {
     if (!t) return;
     setGenerating(true);
     setError('');
+    startProgress();
     try {
       const report = (await generateReport(t)) as Report;
       setReports((prev) => [report, ...prev.filter((r) => r.ticker !== t)]);
@@ -58,6 +75,7 @@ export default function ReportsPage() {
     } catch (e) {
       setError((e as Error).message);
     } finally {
+      finishProgress();
       setGenerating(false);
     }
   }
@@ -94,6 +112,20 @@ export default function ReportsPage() {
             {generating ? '분석 중...' : '분석하기'}
           </button>
         </div>
+        {generating && (
+          <div className="mt-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-400">DART·뉴스·지표 수집 후 AI 분석 중...</span>
+              <span className="text-xs text-gray-400">{Math.round(progress)}%</span>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+              <div
+                className="h-1.5 bg-blue-500 rounded-full transition-all duration-100 ease-linear"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
         {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
       </div>
 

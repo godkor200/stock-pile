@@ -67,13 +67,24 @@
 - [x] T-18: 주요 한국 종목 시드 데이터 70개 (packages/db-schema/src/seeds/stocks.seed.ts)
   - 실행: `export $(grep -v '^#' .env | grep -v '^$' | xargs) && pnpm --filter db-schema seed:stocks`
 
-- [ ] T-19: api-report 로컬 검증
+- [x] T-19: api-report 로컬 검증
   - `ANTHROPIC_API_KEY` 또는 Ollama 실행 필요
   - `POST /api/reports` 테스트
 
-- [ ] T-20: 월간 코칭 리포트 (api-journal — Claude API 기반 매매 패턴 분석)
+- [x] T-20: 월간 코칭 리포트 (api-journal — Claude API 기반 매매 패턴 분석)
 
 - [x] T-21: CSV 일괄 매매 입력 구현 (POST /trades/import-csv, /import 페이지, 템플릿 다운로드)
+
+---
+
+## 메모
+
+---
+
+## 다음 작업 후보
+
+- [ ] T-26: api-backtest 엔진 구현 (`engine/`, `data/` 빈 디렉토리 — `backtest/run`, `backtest/results` = NotImplementedError)
+- [ ] T-27: 누락 spec 보강 (api-journal: positions/users/auth, api-report: vector/llm)
 
 ---
 

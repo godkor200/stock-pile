@@ -32,34 +32,16 @@
 
 ---
 
+## 완료된 태스크 (배포/검증)
+
+- [x] T-13: 브라우저에서 챗봇 E2E 확인 (parse→confirm→trades 저장 검증 완료)
+- [x] T-14: `.env.prod` 파일 작성
+- [x] T-15: Oracle Cloud 서버 배포 실행
+- [x] T-16: Nginx SSL 인증서 설정 (Let's Encrypt)
+
+---
+
 ## 진행 중 / 남은 태스크
-
-### 로컬 검증
-
-- [ ] T-13: 브라우저에서 챗봇 E2E 확인
-  - `pnpm dev` 실행 후 http://localhost:3005/chat 접속
-  - "삼성전자 10주 매수" 입력 → READY_TO_CONFIRM 응답 확인
-  - 확인 버튼 → trades DB에 저장 확인
-  - `.env`에 `GROQ_API_KEY` 입력 필요 (https://console.groq.com)
-
-### 1차 배포 (Oracle Cloud)
-
-- [ ] T-14: `.env.prod` 파일 작성 (`.env.prod.example` 참고)
-  - GROQ_API_KEY 필수
-  - POSTGRES_PASSWORD 강력한 값으로 변경
-  - NEXT_PUBLIC_JOURNAL_URL / NEXT_PUBLIC_REPORT_URL 도메인 설정
-
-- [ ] T-15: Oracle Cloud 서버 접속 후 배포 실행
-  ```bash
-  git clone <repo> stock-pile && cd stock-pile
-  cp .env.prod.example .env.prod  # 값 채우기
-  docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
-  ```
-
-- [ ] T-16: Nginx SSL 인증서 설정 (Let's Encrypt)
-  ```bash
-  certbot --nginx -d <도메인>
-  ```
 
 ### 이후 개선 (2차)
 
@@ -83,8 +65,20 @@
 
 ## 다음 작업 후보
 
-- [ ] T-26: api-backtest 엔진 구현 (`engine/`, `data/` 빈 디렉토리 — `backtest/run`, `backtest/results` = NotImplementedError)
-- [ ] T-27: 누락 spec 보강 (api-journal: positions/users/auth, api-report: vector/llm)
+- [ ] T-26: api-backtest 엔진 구현
+  - `engine/`, `data/` 빈 디렉토리 채우기 (vectorbt 연동)
+  - `POST /backtest/run`, `GET /backtest/results/{id}`, `GET /backtest/results/{id}/trades` NotImplementedError 해소
+  - Redis 상태 추적 (PENDING → RUNNING → DONE/FAILED)
+  - `/backtest` 웹 페이지 신규 생성 (자연어 전략 입력 → 결과 차트)
+
+- [ ] T-27: 누락 spec 보강
+  - api-journal: positions / users / auth 모듈 통합 테스트
+  - api-report: llm / vector-store 모듈 테스트
+
+- [ ] T-28: 포지션 손익 실시간 표시
+  - `GET /positions` 응답에 현재가 기반 손익(금액, %) 필드 추가
+  - yfinance 어댑터는 api-report에 존재 → api-journal에서 재사용 또는 report-client 경유
+  - 웹 `/positions` 페이지에 손익 컬럼 표시 (색상 강조: 수익 초록 / 손실 빨강)
 
 ---
 

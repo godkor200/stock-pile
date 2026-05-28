@@ -6,5 +6,18 @@
       "Bash(pnpm --filter api-journal test *)",
       "Bash(pnpm --filter api-report test *)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash(git commit*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '=== 커밋 전 자동 버그 체크 ===' && ISSUES=$(git diff --staged | grep '^+' | grep -v '^+++' | grep -E '(console\\.log|: any[^a-zA-Z<]|\\bany\\b[^a-zA-Z])' | head -20) && if [ -n \"$ISSUES\" ]; then echo '⚠️  위반 패턴 발견:' && echo \"$ISSUES\" && echo '' && echo '위 항목을 확인하세요. console.log → Logger, any → unknown 으로 교체 필요.'; fi; exit 0"
+          }
+        ]
+      }
+    ]
   }
 }

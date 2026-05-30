@@ -9,7 +9,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isLoggedIn() && pathname !== '/auth') {
+    if (!isLoggedIn() && pathname !== '/auth' && pathname !== '/about' && pathname !== '/tasks') {
       router.replace('/auth');
     }
   }, [pathname, router]);

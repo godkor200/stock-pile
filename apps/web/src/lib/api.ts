@@ -16,7 +16,7 @@ export function logout(): void {
   window.location.href = '/auth';
 }
 
-async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
+export async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
     ...options,
     headers: {

@@ -14,7 +14,8 @@ interface Position {
   stock?: { name: string; market: string };
 }
 
-function PnlText({ value, pct }: { value: number; pct?: number | null }) {
+function PnlText({ value, pct }: { value: number | null | undefined; pct?: number | null }) {
+  if (value == null) return null;
   const positive = value >= 0;
   return (
     <span className={`text-sm font-medium ${positive ? 'text-green-600' : 'text-red-500'}`}>
@@ -87,7 +88,7 @@ export default function PositionsPage() {
               </div>
 
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                {p.unrealizedPnl !== null ? (
+                {p.unrealizedPnl != null ? (
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-gray-400">평가손익</span>
                     <PnlText value={p.unrealizedPnl} pct={p.unrealizedPnlPct} />

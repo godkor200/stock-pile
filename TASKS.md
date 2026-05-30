@@ -75,13 +75,13 @@
   - api-journal: positions / users / auth 모듈 통합 테스트
   - api-report: llm / vector-store 모듈 테스트
 
-- [ ] T-28: 포지션 손익 실시간 표시
+- [x] T-28: 포지션 손익 실시간 표시
   - `GET /positions` 응답에 현재가 기반 미실현 손익(금액, %) 필드 추가
   - yfinance 어댑터는 api-report에 존재 → api-journal에서 재사용 또는 report-client 경유
   - 웹 `/positions` 페이지에 미실현 손익 컬럼 표시
   - 버그 수정: 현재 수익=빨강/손실=파랑으로 색상 반대 → 수익=초록/손실=빨강으로 수정 (page.tsx L51~57)
 
-- [ ] T-29: 대시보드 실질화
+- [x] T-29: 대시보드 실질화
   - 현재 대시보드는 링크 카드 4개만 있고 실제 데이터 없음
   - 오늘 수익률, 보유 종목 요약 카드 (`GET /positions` 활용)
   - 이번 달 매매 통계 (`GET /trades/stats/quick` 활용)

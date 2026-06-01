@@ -65,11 +65,12 @@
 
 ## 다음 작업 후보
 
-- [ ] T-26: api-backtest 엔진 구현
+- [x] T-26: api-backtest 엔진 구현
   - `engine/`, `data/` 빈 디렉토리 채우기 (vectorbt 연동)
   - `POST /backtest/run`, `GET /backtest/results/{id}`, `GET /backtest/results/{id}/trades` NotImplementedError 해소
   - Redis 상태 추적 (PENDING → RUNNING → DONE/FAILED)
   - `/backtest` 웹 페이지 신규 생성 (자연어 전략 입력 → 결과 차트)
+  - 주의: `plotly==5.24.0` 고정 필요 (vectorbt 0.26.2 호환성)
 
 - [ ] T-27: 누락 spec 보강
   - api-journal: positions / users / auth 모듈 통합 테스트

@@ -1,7 +1,9 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file="../../.env", extra="ignore")
+
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_db: str = "stockpile"
@@ -25,9 +27,6 @@ class Settings(BaseSettings):
     @property
     def redis_url(self) -> str:
         return f"redis://{self.redis_host}:{self.redis_port}"
-
-    class Config:
-        env_file = "../../.env"
 
 
 settings = Settings()

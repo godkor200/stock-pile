@@ -167,4 +167,12 @@ export class TradesRepository {
     const result = await this.repo.delete({ id, userId });
     return (result.affected ?? 0) > 0;
   }
+
+  /** 캘린더 P&L 계산용 — 전체 매매 내역을 날짜 오름차순으로 반환 */
+  async findAllOrdered(userId: string): Promise<TradeEntity[]> {
+    return this.repo.find({
+      where: { userId },
+      order: { tradedAt: 'ASC', createdAt: 'ASC' },
+    });
+  }
 }

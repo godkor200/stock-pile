@@ -88,7 +88,7 @@
   - 이번 달 매매 통계 (`GET /trades/stats/quick` 활용)
   - 최근 매매 5건 미니 리스트
 
-- [ ] T-30: 수익률 캘린더 (히트맵)
+- [x] T-30: 수익률 캘린더 (히트맵)
   - 일별 실현 손익을 GitHub 잔디 스타일 히트맵으로 시각화
   - `GET /trades/stats/daily` 엔드포인트 추가 (api-journal) — 날짜별 손익 집계
   - 대시보드 또는 별도 `/calendar` 페이지에 Recharts 히트맵 컴포넌트 추가

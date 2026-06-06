@@ -94,6 +94,18 @@ export class TradesController {
     return this.tradesService.quickStats(userId);
   }
 
+  @Get('stats/daily')
+  @ApiOperation({ summary: '일별 실현 손익 집계 (캘린더 히트맵용)' })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: '조회 연도 (기본값: 현재 연도)' })
+  async dailyStats(
+    @Req() req: Request,
+    @Query('year') year?: string,
+  ) {
+    const userId = getUserId(req);
+    const y = year ? parseInt(year, 10) : new Date().getFullYear();
+    return this.tradesService.dailyStats(userId, y);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '단건 매매 조회' })
   async findOne(

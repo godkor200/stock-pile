@@ -155,3 +155,14 @@ export function getReportHistory(ticker: string) {
 export function getMonthlyCoaching(year: number, month: number) {
   return request(`${JOURNAL}/coaching/monthly?year=${year}&month=${month}`);
 }
+
+// ── calendar ──────────────────────────────────────────────
+export interface DailyStat {
+  date: string;
+  pnl: number;
+  tradeCount: number;
+}
+
+export function getDailyStats(year: number) {
+  return request<DailyStat[]>(`${JOURNAL}/trades/stats/daily?year=${year}`);
+}

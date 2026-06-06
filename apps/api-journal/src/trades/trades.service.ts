@@ -44,6 +44,15 @@ const EMOTION_MAP: Record<string, Emotion> = {
   포모: Emotion.FOMO, FOMO: Emotion.FOMO,
 };
 
+export interface DailyStatItem {
+  /** YYYY-MM-DD */
+  date: string;
+  /** SELL 기반 실현 손익 (매수만 있는 날은 0) */
+  pnl: number;
+  /** 해당 날짜 총 매매 건수 (매수+매도) */
+  tradeCount: number;
+}
+
 @Injectable()
 export class TradesService {
   private readonly logger = new Logger(TradesService.name);
@@ -207,6 +216,56 @@ export class TradesService {
     this.logger.log(`CSV import: userId=${userId} imported=${results.length} errors=${rowErrors.length}`);
 
     return { imported: results.length, errors: rowErrors };
+  }
+
+  /**
+   * 연도별 일별 실현 손익 집계 — 캘린더 히트맵용
+   * running avg-cost basis 방식으로 SELL 시점의 P&L을 계산한다.
+   */
+  async dailyStats(userId: string, year: number): Promise<DailyStatItem[]> {
+    const trades = await this.tradesRepository.findAllOrdered(userId);
+
+    // ticker별 running 평균단가
+    const runningPos = new Map<string, { qty: number; avgPrice: number }>();
+    const dayMap = new Map<string, { pnl: number; tradeCount: number }>();
+    const yearPrefix = String(year);
+
+    for (const trade of trades) {
+      const dateKey = (trade.tradedAt as Date).toISOString().slice(0, 10);
+      const inYear = dateKey.startsWith(yearPrefix);
+      const qty = Number(trade.quantity);
+      const price = Number(trade.price);
+      const pos = runningPos.get(trade.ticker) ?? { qty: 0, avgPrice: 0 };
+
+      if (trade.side === TradeSide.BUY) {
+        const newQty = pos.qty + qty;
+        pos.avgPrice = newQty > 0
+          ? (pos.qty * pos.avgPrice + qty * price) / newQty
+          : price;
+        pos.qty = newQty;
+        runningPos.set(trade.ticker, pos);
+        if (inYear) {
+          const day = dayMap.get(dateKey) ?? { pnl: 0, tradeCount: 0 };
+          day.tradeCount++;
+          dayMap.set(dateKey, day);
+        }
+      } else {
+        // SELL: 실현 손익 계산
+        const pnl = (price - pos.avgPrice) * qty;
+        pos.qty = Math.max(0, pos.qty - qty);
+        runningPos.set(trade.ticker, pos);
+        if (inYear) {
+          const day = dayMap.get(dateKey) ?? { pnl: 0, tradeCount: 0 };
+          day.pnl += pnl;
+          day.tradeCount++;
+          dayMap.set(dateKey, day);
+        }
+      }
+    }
+
+    return Array.from(dayMap.entries())
+      .map(([date, stat]) => ({ date, ...stat }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   }
 
   /** Chat bot이 내부에서 호출 — HTTP 노출 X */

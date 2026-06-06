@@ -17,6 +17,7 @@ const NAV = [
   { href: '/reports', label: '종목 분석' },
   { href: '/coaching', label: '월간 코칭' },
   { href: '/backtest', label: '백테스트' },
+  { href: '/calendar', label: '수익 캘린더' },
   { href: '/about', label: 'About' },
 ];
 

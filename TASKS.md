@@ -88,6 +88,31 @@
   - 이번 달 매매 통계 (`GET /trades/stats/quick` 활용)
   - 최근 매매 5건 미니 리스트
 
+- [ ] T-30: 수익률 캘린더 (히트맵)
+  - 일별 실현 손익을 GitHub 잔디 스타일 히트맵으로 시각화
+  - `GET /trades/stats/daily` 엔드포인트 추가 (api-journal) — 날짜별 손익 집계
+  - 대시보드 또는 별도 `/calendar` 페이지에 Recharts 히트맵 컴포넌트 추가
+
+- [ ] T-31: 목표가·손절가 설정
+  - `positions` 테이블에 `targetPrice`, `stopLoss` 컬럼 추가 (db-schema 마이그레이션 필요)
+  - `PATCH /positions/:ticker` 엔드포인트로 TP/SL 설정
+  - `/positions` 페이지에 TP/SL 입력 인라인 편집 + 달성률·경고 표시
+
+- [ ] T-32: 백테스트 전략 이력 저장 & 비교
+  - `backtest_results` 테이블 추가 (db-schema 마이그레이션 필요)
+  - api-backtest 완료 시 PostgreSQL에 영구 저장 (현재는 Redis만)
+  - `/backtest` 페이지에 이전 전략 목록 + 결과 비교 오버레이 차트 추가
+
+- [ ] T-33: 포트폴리오 섹터 비중 분석
+  - Yahoo Finance에서 종목별 섹터 정보 조회 (api-journal stocks 어댑터 확장)
+  - `GET /positions/sector-breakdown` 엔드포인트 추가
+  - `/positions` 또는 `/dashboard` 페이지에 섹터 파이차트 + 리밸런싱 제안 표시
+
+- [ ] T-34: 텔레그램 알림 봇
+  - `UserEntity.telegramUserId` 필드 활용 (기존 컬럼, 마이그레이션 불필요)
+  - `PATCH /users/telegram` 으로 텔레그램 ID 등록 UI
+  - TP/SL 도달 알림, 주간 코칭 요약 자동 발송 (NestJS 스케줄러)
+
 ---
 
 ## 메모

@@ -72,7 +72,7 @@
   - `/backtest` 웹 페이지 신규 생성 (자연어 전략 입력 → 결과 차트)
   - 주의: `plotly==5.24.0` 고정 필요 (vectorbt 0.26.2 호환성)
 
-- [ ] T-27: 누락 spec 보강
+- [x] T-27: 누락 spec 보강
   - api-journal: positions / users / auth 모듈 통합 테스트
   - api-report: llm / vector-store 모듈 테스트
 
